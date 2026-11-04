@@ -33,7 +33,7 @@ immutables-value = { module = "org.immutables:value", version = "2.12.3" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version = "2.22" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version = "2.22.4" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version = "2.22.4" }
-jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version = "2.22.3" }
+jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version = "2.22.4" }
 jackson-datatype-guava = { module = "com.fasterxml.jackson.datatype:jackson-datatype-guava", version = "2.22.4" }
 jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version = "2.22.4" }
 jackson-module-parameterNames = { module = "com.fasterxml.jackson.module:jackson-module-parameter-names", version = "2.22.4" }
