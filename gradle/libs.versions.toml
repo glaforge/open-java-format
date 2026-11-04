@@ -25,7 +25,7 @@ compileTesting = { module = "com.google.testing.compile:compile-testing", versio
 # Picnic's error-prone-support, built against one Error Prone release; keep the two in step.
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
 errorProneSupport-contrib = { module = "tech.picnic.error-prone-support:error-prone-contrib", version = "0.30.0" }
-nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.2" }
+nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.3" }
 functionaljava = { module = "org.functionaljava:functionaljava", version = "5.0" }
 guava = { module = "com.google.guava:guava", version = "33.7.2-jre" }
 guava-testlib = { module = "com.google.guava:guava-testlib", version = "33.7.2-jre" }
