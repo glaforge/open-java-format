@@ -154,6 +154,7 @@ final class EmbeddedNativeImageTest {
         assertThat(embedded.status("21.0.2")).isEqualTo(new Status.Outdated(installed, "21.0.2"));
         // A plugin built from a commit cannot download its own version, so nothing newer is on offer.
         assertThat(embedded.status("2b233feb")).isEqualTo(new Status.Current(installed));
+        assertThat(embedded.status("21.0.1-15-gcd4ee30.dirty")).isEqualTo(new Status.Current(installed));
     }
 
     @Test

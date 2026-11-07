@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 /**
@@ -58,6 +59,7 @@ final class EmbeddedNativeImage {
 
     private static final String MAVEN_CENTRAL = "https://repo1.maven.org/maven2";
     private static final String TEMPORARY_PREFIX = "download-";
+    private static final Pattern RELEASE = Pattern.compile("\\d+(\\.\\d+)*");
 
     private final Path root;
     private final Optional<NativePlatform> platform;
@@ -151,13 +153,14 @@ final class EmbeddedNativeImage {
     }
 
     /**
-     * Whether installed is older than available. A version that does not parse, as a plugin built from a commit has,
-     * is never newer: Maven Central has no binary for it.
+     * Whether installed is older than available. Only a release is ever newer: a plugin built from a commit has a
+     * version such as 21.0.1-3-gabc1234, or a bare hash, and Maven Central has no binary for either.
      */
     static boolean isOlder(String installed, String available) {
         var installedVersion = FormatterVersion.parse(installed);
         var availableVersion = FormatterVersion.parse(available);
-        return installedVersion.isPresent()
+        return RELEASE.matcher(available).matches()
+                && installedVersion.isPresent()
                 && availableVersion.isPresent()
                 && installedVersion.get().compareTo(availableVersion.get()) < 0;
     }
