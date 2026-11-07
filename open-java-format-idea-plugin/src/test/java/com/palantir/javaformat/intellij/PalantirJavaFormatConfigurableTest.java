@@ -16,8 +16,11 @@ package com.palantir.javaformat.intellij;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.testFramework.EdtTestUtil;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
@@ -25,17 +28,26 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.JavaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
+import com.intellij.ui.components.ActionLink;
+import com.palantir.javaformat.intellij.EmbeddedNativeImage.Installed;
+import com.palantir.javaformat.intellij.EmbeddedNativeImage.Status;
+import com.palantir.javaformat.intellij.PalantirJavaFormatConfigurable.StatusLine;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
 import java.awt.Component;
 import java.awt.Container;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * The settings page used to be assembled by the IntelliJ GUI designer, whose generated code this build never wove in:
@@ -44,8 +56,13 @@ import org.junit.jupiter.api.Test;
  */
 final class PalantirJavaFormatConfigurableTest {
 
+    @TempDir
+    private Path dir;
+
     private JavaCodeInsightTestFixture fixture;
     private PalantirJavaFormatSettings settings;
+    private PalantirJavaFormatConfigurable configurable;
+    private JComponent component;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -54,29 +71,31 @@ final class PalantirJavaFormatConfigurableTest {
         fixture = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(projectBuilder.getFixture());
         fixture.setUp();
         settings = PalantirJavaFormatSettings.getInstance(fixture.getProject());
+        settings.loadState(new State());
+        // Nothing downloaded, and nowhere to download from.
+        var embedded = new EmbeddedNativeImage(
+                dir.resolve("native"), Optional.of(new NativePlatform("macos", "aarch64")), "http://127.0.0.1:1");
+        configurable = new PalantirJavaFormatConfigurable(fixture.getProject(), embedded);
+        component = requireNonNull(configurable.createComponent());
     }
 
     @AfterEach
     void tearDown() throws Exception {
+        configurable.disposeUIResources();
         fixture.tearDown();
     }
 
     @Test
     void buildsAPanelWithItsControls() {
-        PalantirJavaFormatConfigurable configurable = new PalantirJavaFormatConfigurable(fixture.getProject());
-
-        JComponent component = requireNonNull(configurable.createComponent());
-
-        assertThat(findCheckBox(component)).isPresent();
+        assertThat(findCheckBox("Enable open-java-format")).isNotNull();
+        assertThat(findCheckBox("Use native binary")).isNotNull();
+        assertThat(findAll(component, TextFieldWithBrowseButton.class)).hasSize(1);
     }
 
     @Test
     void hasNoChoiceOfCodeStyle() {
         // There is one style, so the page does not offer a list of them.
-        PalantirJavaFormatConfigurable configurable = new PalantirJavaFormatConfigurable(fixture.getProject());
-
-        assertThat(findAll(requireNonNull(configurable.createComponent()), ComboBox.class))
-                .isEmpty();
+        assertThat(findAll(component, ComboBox.class)).isEmpty();
     }
 
     @Test
@@ -85,11 +104,8 @@ final class PalantirJavaFormatConfigurableTest {
         disabled.setEnabled("false");
         settings.loadState(disabled);
 
-        PalantirJavaFormatConfigurable configurable = new PalantirJavaFormatConfigurable(fixture.getProject());
-
         EdtTestUtil.runInEdtAndWait(() -> {
-            JCheckBox enable = findCheckBox(requireNonNull(configurable.createComponent()))
-                    .orElseThrow();
+            JCheckBox enable = findCheckBox("Enable open-java-format");
 
             configurable.reset();
             assertThat(enable.isSelected()).isFalse();
@@ -112,8 +128,128 @@ final class PalantirJavaFormatConfigurableTest {
                 .hasValueSatisfying(version -> assertThat(version).isNotBlank());
     }
 
-    private static Optional<JCheckBox> findCheckBox(Component root) {
-        return findAll(root, JCheckBox.class).stream().findFirst();
+    @Test
+    void showsTheNativeOptionsOnlyWithTheNativeBinaryOn() throws Throwable {
+        EdtTestUtil.runInEdtAndWait(() -> {
+            var useNativeImage = findCheckBox("Use native binary");
+            var path = findAll(component, TextFieldWithBrowseButton.class).get(0);
+
+            configurable.reset();
+            assertThat(isDisplayed(path)).isFalse();
+
+            useNativeImage.setSelected(true);
+            assertThat(isDisplayed(path)).isTrue();
+        });
+    }
+
+    @Test
+    void readsAndWritesTheNativeBinarySettings() throws Throwable {
+        var binary = executable("open-java-format");
+        settings.setUseNativeImage(true);
+
+        EdtTestUtil.runInEdtAndWait(() -> {
+            var path = findAll(component, TextFieldWithBrowseButton.class).get(0);
+
+            configurable.reset();
+            assertThat(findCheckBox("Use native binary").isSelected()).isTrue();
+            assertThat(path.getText()).isEmpty();
+            assertThat(configurable.isModified()).isFalse();
+
+            path.setText(binary.toString());
+            assertThat(configurable.isModified()).isTrue();
+            configurable.apply();
+        });
+
+        assertThat(settings.useNativeImage()).isTrue();
+        assertThat(settings.getNativeImagePath()).hasValue(binary);
+    }
+
+    @Test
+    void refusesTheNativeBinaryWithoutABinary() throws Throwable {
+        EdtTestUtil.runInEdtAndWait(() -> {
+            configurable.reset();
+            findCheckBox("Use native binary").setSelected(true);
+
+            assertThatThrownBy(configurable::apply)
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessage("Download the embedded version or choose a binary");
+        });
+
+        assertThat(settings.useNativeImage()).isFalse();
+    }
+
+    @Test
+    void refusesAPathThatIsNotAnExecutableFile() throws Throwable {
+        var missing = dir.resolve("missing");
+
+        EdtTestUtil.runInEdtAndWait(() -> {
+            configurable.reset();
+            findCheckBox("Use native binary").setSelected(true);
+            findAll(component, TextFieldWithBrowseButton.class).get(0).setText(missing.toString());
+
+            assertThatThrownBy(configurable::apply)
+                    .isInstanceOf(ConfigurationException.class)
+                    .hasMessage(missing + " is not an executable file");
+        });
+    }
+
+    @Test
+    void offersADownloadBeforeTheFirstOne() throws Throwable {
+        EdtTestUtil.runInEdtAndWait(() -> {
+            configurable.reset();
+
+            assertThat(findAll(component, JLabel.class))
+                    .extracting(JLabel::getText)
+                    .contains("No embedded version.");
+            assertThat(findAll(component, ActionLink.class)).singleElement().satisfies(link -> {
+                assertThat(link.getText()).isEqualTo("Download");
+                assertThat(link.isVisible()).isTrue();
+            });
+        });
+    }
+
+    @Test
+    void describesEveryStateOfTheEmbeddedBinary() {
+        var installed = new Installed("21.0.1", Path.of("/system/open-java-format/native/21.0.1/open-java-format"));
+
+        assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.NotDownloaded()))
+                .isEqualTo(new StatusLine("No embedded version.", Optional.of("Download")));
+        assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.Downloading("21.0.2")))
+                .isEqualTo(new StatusLine("Downloading embedded version 21.0.2…", Optional.empty()));
+        assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.DownloadFailed("21.0.2", "connection refused")))
+                .isEqualTo(new StatusLine("Download failed: connection refused.", Optional.of("Retry")));
+        assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.Current(installed)))
+                .isEqualTo(new StatusLine("Use embedded version 21.0.1", Optional.empty()));
+        assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.Outdated(installed, "21.0.2")))
+                .isEqualTo(new StatusLine("Use embedded version 21.0.1.", Optional.of("Update to 21.0.2")));
+        assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.NoImageForPlatform()))
+                .satisfies(line -> {
+                    assertThat(line.text()).startsWith("No native binary is published for ");
+                    assertThat(line.action()).isEmpty();
+                });
+    }
+
+    private JCheckBox findCheckBox(String text) {
+        return findAll(component, JCheckBox.class).stream()
+                .filter(checkBox -> checkBox.getText().equals(text))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    /** Whether the component and every container up to the page are visible. */
+    private boolean isDisplayed(Component target) {
+        for (var current = target; current != null && current != component; current = current.getParent()) {
+            if (!current.isVisible()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Path executable(String name) throws IOException {
+        var binary = Files.writeString(dir.resolve(name), "#!/bin/sh\n");
+        assertThat(binary.toFile().setExecutable(true)).isTrue();
+        return binary;
     }
 
     private static <T extends Component> List<T> findAll(Component root, Class<T> type) {
