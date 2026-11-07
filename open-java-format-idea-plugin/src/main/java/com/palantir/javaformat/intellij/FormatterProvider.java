@@ -34,8 +34,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,19 +48,31 @@ final class FormatterProvider {
     private final LoadingCache<FormatterCacheKey, Optional<FormatterService>> implementationCache =
             Caffeine.newBuilder().maximumSize(1).build(FormatterProvider::createFormatter);
 
+    private final Supplier<Optional<Path>> embeddedNativeImage;
+
+    /** embeddedNativeImage: the downloaded native binary, asked again on every format since a download can add it. */
+    FormatterProvider(Supplier<Optional<Path>> embeddedNativeImage) {
+        this.embeddedNativeImage = embeddedNativeImage;
+    }
+
     Optional<FormatterService> get(Project project, PalantirJavaFormatSettings settings) {
+        // The selection, not the settings, is in the key: the formatter has to change when the binary appears.
         return implementationCache.get(new FormatterCacheKey(
                 project,
                 settings.getImplementationClassPath(),
-                settings.getNativeImageClassPath(),
-                settings.injectedVersionIsOutdated()));
+                settings.injectedVersionIsOutdated(),
+                FormatterSelection.of(settings, embeddedNativeImage.get())));
     }
 
     private static Optional<FormatterService> createFormatter(FormatterCacheKey cacheKey) {
-        if (cacheKey.nativeImageClassPath.isPresent()) {
-            Path nativeImage = Path.of(cacheKey.nativeImageClassPath.get());
-            log.info("open-java-format: using native binary " + nativeImage);
-            return Optional.of(new NativeImageFormatterService(nativeImage));
+        if (cacheKey.selection() instanceof FormatterSelection.NativeImage nativeImage) {
+            log.info("open-java-format: using native binary, " + (nativeImage.embedded() ? "embedded: " : "custom: ")
+                    + nativeImage.path());
+            return Optional.of(new NativeImageFormatterService(nativeImage.path()));
+        }
+        if (cacheKey.selection() instanceof FormatterSelection.JavaBased javaBased && javaBased.nativeImageMissing()) {
+            log.warn("open-java-format: the native binary is switched on but not downloaded, formatting with the"
+                    + " Java-based formatter");
         }
 
         // The formatter runs in a JVM of its own, started with the "--add-exports" it needs to reach javac.
@@ -69,12 +81,13 @@ final class FormatterProvider {
         int jdkMajorVersion = Runtime.version().feature();
         Path jdkPath = Path.of(System.getProperty("java.home"), "bin", SystemInfo.isWindows ? "java.exe" : "java");
         List<Path> implementationClasspath =
-                getImplementationUrls(cacheKey.implementationClassPath, cacheKey.useBundledImplementation);
+                getImplementationUrls(cacheKey.implementationClassPath(), cacheKey.useBundledImplementation());
+        var classpath = cacheKey.useBundledImplementation()
+                        || cacheKey.implementationClassPath().isEmpty()
+                ? "bundled"
+                : "build";
         log.info("open-java-format: using Java-based formatter on " + jdkPath + " (Java " + jdkMajorVersion + ") with "
-                + (cacheKey.useBundledImplementation || cacheKey.implementationClassPath.isEmpty()
-                        ? "bundled"
-                        : "build")
-                + " classpath");
+                + classpath + " classpath");
         return Optional.of(new BootstrappingFormatterService(jdkPath, jdkMajorVersion, implementationClasspath));
     }
 
@@ -120,41 +133,9 @@ final class FormatterProvider {
         }
     }
 
-    private static final class FormatterCacheKey {
-        private final Project project;
-        private final Optional<List<URI>> implementationClassPath;
-        private final Optional<URI> nativeImageClassPath;
-        private final boolean useBundledImplementation;
-
-        FormatterCacheKey(
-                Project project,
-                Optional<List<URI>> implementationClassPath,
-                Optional<URI> nativeImageClassPath,
-                boolean useBundledImplementation) {
-            this.project = project;
-            this.implementationClassPath = implementationClassPath;
-            this.nativeImageClassPath = nativeImageClassPath;
-            this.useBundledImplementation = useBundledImplementation;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            FormatterCacheKey that = (FormatterCacheKey) o;
-            return useBundledImplementation == that.useBundledImplementation
-                    && Objects.equals(project, that.project)
-                    && Objects.equals(implementationClassPath, that.implementationClassPath)
-                    && Objects.equals(nativeImageClassPath, that.nativeImageClassPath);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(project, implementationClassPath, nativeImageClassPath, useBundledImplementation);
-        }
-    }
+    private record FormatterCacheKey(
+            Project project,
+            Optional<List<URI>> implementationClassPath,
+            boolean useBundledImplementation,
+            FormatterSelection selection) {}
 }

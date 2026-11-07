@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarFile;
@@ -85,11 +86,24 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
         return state.implementationClassPath;
     }
 
-    /**
-     * The path to the formatter nativeImage.
-     */
-    Optional<URI> getNativeImageClassPath() {
-        return state.nativeImageClassPath;
+    /** Whether the native binary formats this project rather than the Java-based formatter. */
+    boolean useNativeImage() {
+        return state.useNativeImage;
+    }
+
+    void setUseNativeImage(boolean useNativeImage) {
+        state.useNativeImage = useNativeImage;
+    }
+
+    /** A native binary of the user's own, run instead of the embedded one. */
+    Optional<Path> getNativeImagePath() {
+        return Optional.ofNullable(state.nativeImagePath)
+                .filter(path -> !path.isBlank())
+                .map(Path::of);
+    }
+
+    void setNativeImagePath(Optional<Path> nativeImagePath) {
+        state.nativeImagePath = nativeImagePath.map(Path::toString).orElse(null);
     }
 
     boolean injectedVersionIsOutdated() {
@@ -142,7 +156,11 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
 
         private EnabledState enabled = EnabledState.UNKNOWN;
         private Optional<List<URI>> implementationClassPath = Optional.empty();
-        private Optional<URI> nativeImageClassPath = Optional.empty();
+
+        public boolean useNativeImage = false;
+
+        @Nullable
+        public String nativeImagePath;
 
         public void setImplementationClassPath(@Nullable List<String> value) {
             implementationClassPath = Optional.ofNullable(value)
@@ -154,15 +172,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
             return implementationClassPath
                     .map(paths -> paths.stream().map(URI::toString).collect(Collectors.toList()))
                     .orElse(null);
-        }
-
-        public void setNativeImageClassPath(@Nullable String value) {
-            nativeImageClassPath = Optional.ofNullable(value).map(URI::create);
-        }
-
-        @SuppressWarnings("for-rollout:NullAway")
-        public String getNativeImageClassPath() {
-            return nativeImageClassPath.map(URI::toString).orElse(null);
         }
 
         // enabled used to be a boolean so we use bean property methods for backwards compatibility
@@ -192,8 +201,10 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
                     + enabled
                     + ", implementationClassPath="
                     + implementationClassPath
-                    + ", nativeImageClassPath="
-                    + nativeImageClassPath
+                    + ", useNativeImage="
+                    + useNativeImage
+                    + ", nativeImagePath="
+                    + nativeImagePath
                     + '}';
         }
     }

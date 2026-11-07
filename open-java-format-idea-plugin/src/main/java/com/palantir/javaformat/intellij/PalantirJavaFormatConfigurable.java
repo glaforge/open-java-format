@@ -22,6 +22,7 @@ import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.FormBuilder;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.EnabledState;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -35,7 +36,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     private final Project project;
     private final JPanel panel;
     private final JCheckBox enable;
-    private final JLabel isUsingNativeImage;
+    private final JLabel formatterType;
     private final JLabel formatterVersion;
     private final JLabel pluginVersion;
 
@@ -44,7 +45,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         this.enable = new JCheckBox("Enable open-java-format");
         this.pluginVersion = new JLabel();
         this.formatterVersion = new JLabel();
-        this.isUsingNativeImage = new JLabel();
+        this.formatterType = new JLabel();
 
         // Laid out here rather than by the IntelliJ GUI designer. A .form is woven into the class at build
         // time, and this build does not instrument bytecode (see build.gradle), which left every field
@@ -53,7 +54,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
                 .addComponent(enable)
                 .addLabeledComponent("Plugin version", pluginVersion)
                 .addLabeledComponent("Implementation version", formatterVersion)
-                .addLabeledComponent("Formatter type", isUsingNativeImage)
+                .addLabeledComponent("Formatter type", formatterType)
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
     }
@@ -107,7 +108,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         enable.setSelected(settings.isEnabled());
         pluginVersion.setText(settings.getImplementationVersion().orElse("unknown"));
         formatterVersion.setText(getFormatterVersionText(settings));
-        isUsingNativeImage.setText(isUsingNativeImage(settings));
+        formatterType.setText(FormatterSelection.of(settings, Optional.empty()).describe());
     }
 
     @Override
@@ -118,14 +119,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
 
     @Override
     public void disposeUIResources() {}
-
-    private static String isUsingNativeImage(PalantirJavaFormatSettings settings) {
-        if (settings.getNativeImageClassPath().isPresent()) {
-            return "Native image formatter (`openjavaformat.native.formatter` gradle property is enabled)";
-        } else {
-            return "(Default setup) Java-based formatter";
-        }
-    }
 
     private static String getFormatterVersionText(PalantirJavaFormatSettings settings) {
         String suffix = settings.injectedVersionIsOutdated() ? " (using bundled)" : " (using injected)";

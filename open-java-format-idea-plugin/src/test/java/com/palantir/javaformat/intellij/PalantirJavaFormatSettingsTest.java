@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.util.xmlb.XmlSerializer;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
+import java.nio.file.Path;
+import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +45,45 @@ final class PalantirJavaFormatSettingsTest {
         var xml = JDOMUtil.write(XmlSerializer.serialize(new State()));
 
         assertThat(xml).doesNotContain("style");
+    }
+
+    @Test
+    void keepsTheNativeBinarySettings() throws Exception {
+        var settings = new PalantirJavaFormatSettings();
+        settings.setUseNativeImage(true);
+        settings.setNativeImagePath(Optional.of(Path.of("/opt/open-java-format")));
+
+        var reloaded = new PalantirJavaFormatSettings();
+        reloaded.loadState(deserialize(JDOMUtil.write(XmlSerializer.serialize(settings.getState()))));
+
+        assertThat(reloaded.useNativeImage()).isTrue();
+        assertThat(reloaded.getNativeImagePath()).hasValue(Path.of("/opt/open-java-format"));
+    }
+
+    @Test
+    void ignoresTheNativeImageTheGradlePluginUsedToWrite() throws Exception {
+        // Gradle plugins up to 21.0.1 wrote this for openjavaformat.native.formatter=true. The native binary is a
+        // setting of the IDE now, and a build no longer switches it on.
+        var settings = new PalantirJavaFormatSettings();
+        settings.loadState(deserialize("""
+            <component name="PalantirJavaFormatSettings">
+              <option name="enabled" value="true" />
+              <option name="nativeImageClassPath" value="file:/home/me/.gradle/open-java-format-caches/native" />
+            </component>
+            """));
+
+        assertThat(settings.useNativeImage()).isFalse();
+        assertThat(settings.getNativeImagePath()).isEmpty();
+    }
+
+    @Test
+    void takesABlankPathForNone() {
+        var state = new State();
+        state.nativeImagePath = " ";
+        var settings = new PalantirJavaFormatSettings();
+        settings.loadState(state);
+
+        assertThat(settings.getNativeImagePath()).isEmpty();
     }
 
     private static State deserialize(@Language("xml") String xml) throws Exception {
