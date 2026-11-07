@@ -23,7 +23,6 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.project.Project;
 import com.palantir.javaformat.java.FormatterService;
-import com.palantir.javaformat.java.JavaFormatterOptions;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -76,14 +75,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
 
     boolean isUninitialized() {
         return state.enabled.equals(EnabledState.UNKNOWN);
-    }
-
-    JavaFormatterOptions.Style getStyle() {
-        return state.style;
-    }
-
-    void setStyle(JavaFormatterOptions.Style style) {
-        state.style = style;
     }
 
     /**
@@ -153,8 +144,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
         private Optional<List<URI>> implementationClassPath = Optional.empty();
         private Optional<URI> nativeImageClassPath = Optional.empty();
 
-        public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.OJF;
-
         public void setImplementationClassPath(@Nullable List<String> value) {
             implementationClassPath = Optional.ofNullable(value)
                     .map(strings -> strings.stream().map(URI::create).collect(Collectors.toList()));
@@ -205,8 +194,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
                     + implementationClassPath
                     + ", nativeImageClassPath="
                     + nativeImageClassPath
-                    + ", style="
-                    + style
                     + '}';
         }
     }

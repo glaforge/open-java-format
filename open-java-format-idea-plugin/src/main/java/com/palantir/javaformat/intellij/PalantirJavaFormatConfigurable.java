@@ -20,7 +20,6 @@ import com.intellij.openapi.options.BaseConfigurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.util.ui.FormBuilder;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.EnabledState;
 import javax.annotation.Nullable;
@@ -36,7 +35,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     private final Project project;
     private final JPanel panel;
     private final JCheckBox enable;
-    private final ComboBox<UiFormatterStyle> styleComboBox;
     private final JLabel isUsingNativeImage;
     private final JLabel formatterVersion;
     private final JLabel pluginVersion;
@@ -44,7 +42,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     public PalantirJavaFormatConfigurable(Project project) {
         this.project = project;
         this.enable = new JCheckBox("Enable open-java-format");
-        this.styleComboBox = new ComboBox<>(UiFormatterStyle.values());
         this.pluginVersion = new JLabel();
         this.formatterVersion = new JLabel();
         this.isUsingNativeImage = new JLabel();
@@ -54,7 +51,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         // above null: the page rendered nothing and reset() threw the moment it was opened.
         this.panel = FormBuilder.createFormBuilder()
                 .addComponent(enable)
-                .addLabeledComponent("Code style", styleComboBox)
                 .addLabeledComponent("Plugin version", pluginVersion)
                 .addLabeledComponent("Implementation version", formatterVersion)
                 .addLabeledComponent("Formatter type", isUsingNativeImage)
@@ -96,7 +92,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     public void apply() throws ConfigurationException {
         PalantirJavaFormatSettings settings = PalantirJavaFormatSettings.getInstance(project);
         settings.setEnabled(enable.isSelected() ? EnabledState.ENABLED : getDisabledState());
-        settings.setStyle(((UiFormatterStyle) styleComboBox.getSelectedItem()).convert());
     }
 
     private EnabledState getDisabledState() {
@@ -110,7 +105,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     public void reset() {
         PalantirJavaFormatSettings settings = PalantirJavaFormatSettings.getInstance(project);
         enable.setSelected(settings.isEnabled());
-        styleComboBox.setSelectedItem(UiFormatterStyle.convert(settings.getStyle()));
         pluginVersion.setText(settings.getImplementationVersion().orElse("unknown"));
         formatterVersion.setText(getFormatterVersionText(settings));
         isUsingNativeImage.setText(isUsingNativeImage(settings));
@@ -119,8 +113,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     @Override
     public boolean isModified() {
         PalantirJavaFormatSettings settings = PalantirJavaFormatSettings.getInstance(project);
-        return enable.isSelected() != settings.isEnabled()
-                || !styleComboBox.getSelectedItem().equals(UiFormatterStyle.convert(settings.getStyle()));
+        return enable.isSelected() != settings.isEnabled();
     }
 
     @Override

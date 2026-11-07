@@ -17,6 +17,7 @@ package com.palantir.javaformat.intellij;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.testFramework.EdtTestUtil;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
@@ -28,6 +29,7 @@ import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -69,6 +71,15 @@ final class PalantirJavaFormatConfigurableTest {
     }
 
     @Test
+    void hasNoChoiceOfCodeStyle() {
+        // There is one style, so the page does not offer a list of them.
+        PalantirJavaFormatConfigurable configurable = new PalantirJavaFormatConfigurable(fixture.getProject());
+
+        assertThat(findAll(requireNonNull(configurable.createComponent()), ComboBox.class))
+                .isEmpty();
+    }
+
+    @Test
     void readsAndWritesTheEnabledSetting() throws Throwable {
         State disabled = new State();
         disabled.setEnabled("false");
@@ -102,15 +113,18 @@ final class PalantirJavaFormatConfigurableTest {
     }
 
     private static Optional<JCheckBox> findCheckBox(Component root) {
-        if (root instanceof JCheckBox checkBox) {
-            return Optional.of(checkBox);
+        return findAll(root, JCheckBox.class).stream().findFirst();
+    }
+
+    private static <T extends Component> List<T> findAll(Component root, Class<T> type) {
+        if (type.isInstance(root)) {
+            return List.of(type.cast(root));
         }
         if (root instanceof Container container) {
             return Arrays.stream(container.getComponents())
-                    .map(PalantirJavaFormatConfigurableTest::findCheckBox)
-                    .<JCheckBox>mapMulti(Optional::ifPresent)
-                    .findFirst();
+                    .flatMap(child -> findAll(child, type).stream())
+                    .toList();
         }
-        return Optional.empty();
+        return List.of();
     }
 }
