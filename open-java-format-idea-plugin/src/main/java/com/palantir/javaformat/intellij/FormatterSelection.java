@@ -16,6 +16,7 @@ package com.palantir.javaformat.intellij;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Which formatter a project's settings run. FormatterProvider starts it, and the settings page shows it as the
@@ -25,15 +26,16 @@ sealed interface FormatterSelection {
 
     /**
      * A path of the user's own wins over the embedded binary. Without either, the Java-based formatter runs even with
-     * the native one switched on: the embedded binary may not be downloaded yet.
+     * the native one switched on: the embedded binary may not be downloaded yet. The embedded binary is looked for
+     * only when it would run, since that lists a directory and this runs for every file formatted.
      */
-    static FormatterSelection of(PalantirJavaFormatSettings settings, Optional<Path> embeddedNativeImage) {
+    static FormatterSelection of(PalantirJavaFormatSettings settings, Supplier<Optional<Path>> embeddedNativeImage) {
         if (!settings.useNativeImage()) {
             return new JavaBased(false);
         }
         return settings.getNativeImagePath()
                 .<FormatterSelection>map(path -> new NativeImage(path, false))
-                .or(() -> embeddedNativeImage.map(path -> new NativeImage(path, true)))
+                .or(() -> embeddedNativeImage.get().map(path -> new NativeImage(path, true)))
                 .orElseGet(() -> new JavaBased(true));
     }
 

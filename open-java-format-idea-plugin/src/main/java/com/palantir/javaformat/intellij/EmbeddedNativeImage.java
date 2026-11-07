@@ -69,6 +69,7 @@ final class EmbeddedNativeImage {
     private final AtomicReference<Activity> activity = new AtomicReference<>(new Activity.Idle());
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean noticeShown = new AtomicBoolean();
+    private final AtomicBoolean staleRemoved = new AtomicBoolean();
 
     EmbeddedNativeImage() {
         this(
@@ -243,10 +244,11 @@ final class EmbeddedNativeImage {
 
     /**
      * Removes what an earlier session could not: the binaries of other versions, one of which Windows may have held
-     * open while it formatted, and unfinished downloads. Never while a download is under way, whose file would go too.
+     * open while it formatted, and unfinished downloads. Once per IDE session, by the first project that opens, and
+     * never while a download is under way, whose file would go too.
      */
     void removeStale() {
-        if (!(activity.get() instanceof Activity.Downloading)) {
+        if (!(activity.get() instanceof Activity.Downloading) && staleRemoved.compareAndSet(false, true)) {
             removeAllBut(installed().map(Installed::version).orElse(""));
         }
     }

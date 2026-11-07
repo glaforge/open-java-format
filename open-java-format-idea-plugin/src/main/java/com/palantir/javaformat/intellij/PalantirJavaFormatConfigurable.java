@@ -235,7 +235,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         embeddedAction.setVisible(line.action().isPresent());
         // What runs with the settings as applied: the embedded binary can arrive while the page is open.
         formatterType.setText(FormatterSelection.of(
-                        PalantirJavaFormatSettings.getInstance(project), embeddedNativeImage.installedPath())
+                        PalantirJavaFormatSettings.getInstance(project), embeddedNativeImage::installedPath)
                 .describe());
     }
 

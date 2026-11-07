@@ -20,6 +20,7 @@ import com.palantir.javaformat.intellij.FormatterSelection.JavaBased;
 import com.palantir.javaformat.intellij.FormatterSelection.NativeImage;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 
 final class FormatterSelectionTest {
@@ -34,28 +35,43 @@ final class FormatterSelectionTest {
         settings.setUseNativeImage(true);
         settings.setNativeImagePath(Optional.of(CUSTOM));
 
-        assertThat(FormatterSelection.of(settings, Optional.of(EMBEDDED))).isEqualTo(new NativeImage(CUSTOM, false));
+        assertThat(FormatterSelection.of(settings, () -> Optional.of(EMBEDDED)))
+                .isEqualTo(new NativeImage(CUSTOM, false));
     }
 
     @Test
     void runsTheEmbeddedBinaryWithoutAPathOfTheUsersOwn() {
         settings.setUseNativeImage(true);
 
-        assertThat(FormatterSelection.of(settings, Optional.of(EMBEDDED))).isEqualTo(new NativeImage(EMBEDDED, true));
+        assertThat(FormatterSelection.of(settings, () -> Optional.of(EMBEDDED)))
+                .isEqualTo(new NativeImage(EMBEDDED, true));
     }
 
     @Test
     void fallsBackToTheJavaBasedFormatterWithoutABinary() {
         settings.setUseNativeImage(true);
 
-        assertThat(FormatterSelection.of(settings, Optional.empty())).isEqualTo(new JavaBased(true));
+        assertThat(FormatterSelection.of(settings, Optional::empty)).isEqualTo(new JavaBased(true));
     }
 
     @Test
     void runsTheJavaBasedFormatterUnlessTheNativeOneIsOn() {
         settings.setNativeImagePath(Optional.of(CUSTOM));
 
-        assertThat(FormatterSelection.of(settings, Optional.of(EMBEDDED))).isEqualTo(new JavaBased(false));
+        assertThat(FormatterSelection.of(settings, () -> Optional.of(EMBEDDED))).isEqualTo(new JavaBased(false));
+    }
+
+    @Test
+    void looksForTheEmbeddedBinaryOnlyWhenItWouldRun() {
+        // It is asked for every file formatted, and most projects run the Java-based formatter.
+        Supplier<Optional<Path>> unasked = () -> {
+            throw new AssertionError("the embedded binary was looked for");
+        };
+        settings.setNativeImagePath(Optional.of(CUSTOM));
+
+        assertThat(FormatterSelection.of(settings, unasked)).isEqualTo(new JavaBased(false));
+        settings.setUseNativeImage(true);
+        assertThat(FormatterSelection.of(settings, unasked)).isEqualTo(new NativeImage(CUSTOM, false));
     }
 
     @Test

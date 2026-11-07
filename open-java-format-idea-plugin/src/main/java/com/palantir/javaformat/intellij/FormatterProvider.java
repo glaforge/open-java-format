@@ -61,7 +61,7 @@ final class FormatterProvider {
                 project,
                 settings.getImplementationClassPath(),
                 settings.injectedVersionIsOutdated(),
-                FormatterSelection.of(settings, embeddedNativeImage.get())));
+                FormatterSelection.of(settings, embeddedNativeImage)));
     }
 
     private static Optional<FormatterService> createFormatter(FormatterCacheKey cacheKey) {
