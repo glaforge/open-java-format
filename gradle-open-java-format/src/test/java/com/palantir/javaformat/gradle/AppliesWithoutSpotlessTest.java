@@ -23,12 +23,20 @@ import java.nio.file.Path;
 import org.gradle.testkit.runner.BuildResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Most projects that apply the formatter never apply Spotless, so there are no Spotless classes on their buildscript
  * classpath. The Spotless integration has to stay dormant there instead of failing the whole plugin.
  */
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class AppliesWithoutSpotlessTest {
+
+    @Parameter
+    private boolean configurationCache;
 
     @TempDir
     private Path projectDir;
@@ -36,6 +44,7 @@ final class AppliesWithoutSpotlessTest {
     @Test
     void applies_without_spotless_on_the_classpath() {
         GradleTestProject project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
                 .plugins("java", "dev.openjavaformat.java-format")
                 .withoutSpotlessOnClasspath();
 

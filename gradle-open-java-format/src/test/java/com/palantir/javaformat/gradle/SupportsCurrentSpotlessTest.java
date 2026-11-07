@@ -43,20 +43,18 @@ final class SupportsCurrentSpotlessTest {
     @Test
     void palantirjavaformatplugin_works_with_current_spotless() {
         new GradleTestProject(projectDir)
-                .withConfigurationCache()
+                .configurationCache(true)
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
-                .buildGradle(
-                        """
-                        dependencies {
-                            palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                        }
+                .buildGradle("""
+                    dependencies {
+                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
+                    }
 
-                        // Forces realization of the spotlessJava task, creating the spotless steps. Any
-                        // configuration resolved eagerly in them fails the configuration cache here.
-                        project.getTasks().getByName("spotlessJava")
-                        """,
-                        CLASSPATH_FILE)
+                    // Forces realization of the spotlessJava task, creating the spotless steps. Any
+                    // configuration resolved eagerly in them fails the configuration cache here.
+                    project.getTasks().getByName("spotlessJava")
+                    """, CLASSPATH_FILE)
                 .succeeds("classes", "--info");
     }
 }

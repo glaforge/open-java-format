@@ -59,7 +59,7 @@ public final class GradleTestProject {
     private final Set<String> plugins = new LinkedHashSet<>();
     private final StringBuilder buildGradle = new StringBuilder();
     private final StringBuilder gradleProperties = new StringBuilder();
-    private boolean configurationCache;
+    private boolean configurationCache = true;
     private boolean spotlessOnClasspath = true;
 
     public GradleTestProject(Path projectDir) {
@@ -100,9 +100,12 @@ public final class GradleTestProject {
                 + "--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
     }
 
-    /** Builds run with the configuration cache off unless a test opts in, which is what the plugin's own tests need. */
-    public GradleTestProject withConfigurationCache() {
-        this.configurationCache = true;
+    /**
+     * Whether the builds run with the configuration cache, on unless a test turns it off. The TestKit test classes run
+     * both ways: a plugin has to work with the cache and without it, and the two run its tasks differently.
+     */
+    public GradleTestProject configurationCache(boolean enabled) {
+        this.configurationCache = enabled;
         return this;
     }
 
@@ -152,6 +155,9 @@ public final class GradleTestProject {
         List<String> allArguments = new ArrayList<>(Arrays.asList(arguments));
         allArguments.add("--stacktrace");
         allArguments.add(configurationCache ? "--configuration-cache" : "--no-configuration-cache");
+        // Every build looks at the files afresh. A test changes files between two builds faster than file system
+        // watching reports it, and the second build then took a deleted output for one still there.
+        allArguments.add("--no-watch-fs");
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(projectDir.toFile())
                 .withGradleVersion(GRADLE_VERSION)

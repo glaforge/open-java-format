@@ -32,9 +32,13 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class PalantirJavaFormatIdeaPluginTest {
 
     // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
@@ -46,6 +50,9 @@ final class PalantirJavaFormatIdeaPluginTest {
 
     private static final ObjectMapper XML_MAPPER = new XmlMapper();
 
+    @Parameter
+    private boolean configurationCache;
+
     @TempDir
     private Path projectDir;
 
@@ -53,16 +60,15 @@ final class PalantirJavaFormatIdeaPluginTest {
     @ValueSource(strings = {"", "openjavaformat.native.formatter=true"})
     void idea_configures_xml_files(String extraGradleProperties) throws IOException {
         GradleTestProject project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
                 .plugins("dev.openjavaformat.java-format-idea", "idea")
                 .gradleProperties(extraGradleProperties)
-                .buildGradle(
-                        """
-                        dependencies {
-                            palantirJavaFormat project.files() // no need to store the real thing in here
-                            %s
-                        }
-                        """,
-                        extraGradleProperties.isBlank() ? "" : NATIVE_CONFIG);
+                .buildGradle("""
+                    dependencies {
+                        palantirJavaFormat project.files() // no need to store the real thing in here
+                        %s
+                    }
+                    """, extraGradleProperties.isBlank() ? "" : NATIVE_CONFIG);
 
         BuildResult result = project.succeeds("idea");
 

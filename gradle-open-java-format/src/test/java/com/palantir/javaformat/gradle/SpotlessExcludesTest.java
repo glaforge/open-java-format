@@ -24,21 +24,27 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class SpotlessExcludesTest {
 
     // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
     private static final String CLASSPATH_FILE =
             new File("build/impl.classpath").getAbsolutePath().replace('\\', '/');
 
-    private static final String SOURCE_FILE =
-            """
-            package test;
-            import java.lang.Void;
-            public class Test { Void test() { return null; } }
-            """;
+    private static final String SOURCE_FILE = """
+        package test;
+        import java.lang.Void;
+        public class Test { Void test() { return null; } }
+        """;
+
+    @Parameter
+    private boolean configurationCache;
 
     @TempDir
     private Path projectDir;
@@ -48,15 +54,14 @@ final class SpotlessExcludesTest {
     @BeforeEach
     void setup() {
         project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
-                .buildGradle(
-                        """
-                        dependencies {
-                            palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                        }
-                        """,
-                        CLASSPATH_FILE);
+                .buildGradle("""
+                    dependencies {
+                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
+                    }
+                    """, CLASSPATH_FILE);
     }
 
     @ParameterizedTest
@@ -70,16 +75,13 @@ final class SpotlessExcludesTest {
                 "build/groovy-dsl-plugins/output"
             })
     void format_ignores_excluded_directories(String srcDir) {
-        project.buildGradle(
-                        """
-                        sourceSets {
-                            main {
-                                java { srcDir '%s' }
-                            }
-                        }
-                        """,
-                        srcDir)
-                .writeFile(srcDir + "/test/Test.java", SOURCE_FILE);
+        project.buildGradle("""
+            sourceSets {
+                main {
+                    java { srcDir '%s' }
+                }
+            }
+            """, srcDir).writeFile(srcDir + "/test/Test.java", SOURCE_FILE);
 
         BuildResult result = project.succeeds("spotlessJavaCheck");
 
@@ -94,16 +96,13 @@ final class SpotlessExcludesTest {
                 "src/main/java/test/generatedNamespace",
             })
     void format_checks_non_generated_files(String srcDir) {
-        project.buildGradle(
-                        """
-                        sourceSets {
-                            main {
-                                java { srcDir '%s' }
-                            }
-                        }
-                        """,
-                        srcDir)
-                .writeFile(srcDir + "/Test.java", SOURCE_FILE);
+        project.buildGradle("""
+            sourceSets {
+                main {
+                    java { srcDir '%s' }
+                }
+            }
+            """, srcDir).writeFile(srcDir + "/Test.java", SOURCE_FILE);
 
         BuildResult result = project.fails("spotlessJavaCheck");
 
