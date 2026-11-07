@@ -22,7 +22,6 @@ import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.FormBuilder;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.EnabledState;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -108,7 +107,9 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         enable.setSelected(settings.isEnabled());
         pluginVersion.setText(settings.getImplementationVersion().orElse("unknown"));
         formatterVersion.setText(getFormatterVersionText(settings));
-        formatterType.setText(FormatterSelection.of(settings, Optional.empty()).describe());
+        formatterType.setText(FormatterSelection.of(
+                        settings, EmbeddedNativeImage.getInstance().installedPath())
+                .describe());
     }
 
     @Override

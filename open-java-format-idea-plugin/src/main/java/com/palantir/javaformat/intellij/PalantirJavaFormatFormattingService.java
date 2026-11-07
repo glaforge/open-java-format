@@ -47,7 +47,8 @@ import static java.util.Optional.ofNullable;
 
 class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService implements PluginAware {
     private static final Logger logger = Logger.getInstance(PalantirJavaFormatFormattingService.class);
-    private final FormatterProvider formatterProvider = new FormatterProvider(Optional::empty);
+    private final FormatterProvider formatterProvider =
+            new FormatterProvider(() -> EmbeddedNativeImage.getInstance().installedPath());
 
     // The platform sets this right after creating the service from plugin.xml: the descriptor of the plugin that
     // declared it, which is how the plugin learns its own path and version (see FormatterProvider.getPluginDescriptor).
