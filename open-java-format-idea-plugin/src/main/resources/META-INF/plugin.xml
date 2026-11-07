@@ -11,6 +11,7 @@
     <p>Formats Java code with <a href="https://github.com/openjavaformat/open-java-format">open-java-format</a>, a maintained fork of palantir-java-format: 120 columns, 4-space indents and lambda-friendly line breaking.</p>
     <p>With the plugin enabled, <b>Reformat Code</b> runs open-java-format instead of the IDE's built-in Java formatter, so the IDE and your build produce identical files. The IDE's own Java code style settings no longer apply.</p>
     <p>The formatter runs in a process of its own, on the IDE's runtime, so the project SDK can be any version. A project that applies the <code>dev.openjavaformat.java-format</code> Gradle plugin takes the formatter version from the build; every other project uses the version bundled with this plugin.</p>
+    <p>For many files at once, tick <b>Use native binary</b> on the plugin's settings page: the plugin downloads the formatter compiled to a native binary for your platform, which starts without a JVM, in a Maven, Gradle or any other project. A binary of your own works too.</p>
     <p>Requires IntelliJ IDEA 2024.2 or later, or another IDE with Java support such as Android Studio.</p>
   ]]></description>
 
