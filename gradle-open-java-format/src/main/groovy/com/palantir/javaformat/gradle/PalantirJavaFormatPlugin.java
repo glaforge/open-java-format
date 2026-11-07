@@ -17,18 +17,22 @@
 package com.palantir.javaformat.gradle;
 
 import com.palantir.javaformat.bootstrap.NativeImageFormatterService;
-import com.palantir.javaformat.java.FormatterService;
 import java.io.File;
 import java.io.IOException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -53,11 +57,18 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
             // TODO(dfox): in the future we may want to offer a simple 'format' task so people don't need to use
             // spotless to try out our formatter
             project.getTasks().register("formatDiff", FormatDiffTask.class, task -> {
+                task.getProjectDirectory().set(project.getLayout().getProjectDirectory());
                 if (getNativeImageSupport().isNativeImageConfigured()) {
                     task.getNativeImage().fileProvider(getNativeImplConfiguration(project));
+                } else {
+                    task.getFormatterClasspath().from(getImplConfiguration(project));
                 }
             });
         });
+    }
+
+    private static Provider<Configuration> getImplConfiguration(Project project) {
+        return project.getRootProject().getConfigurations().named(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME);
     }
 
     private static Provider<File> getNativeImplConfiguration(Project project) {
@@ -78,6 +89,17 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
         @PathSensitive(PathSensitivity.NAME_ONLY)
         abstract RegularFileProperty getNativeImage();
 
+        /** The jars of the Java-based formatter, which runs when the native image is not configured. */
+        @Classpath
+        abstract ConfigurableFileCollection getFormatterClasspath();
+
+        /**
+         * The project whose changed lines are formatted. The task reads it here rather than from {@code getProject()},
+         * which a task must not call when it runs with the configuration cache.
+         */
+        @Internal
+        abstract DirectoryProperty getProjectDirectory();
+
         public FormatDiffTask() {
             setDescription("Format only chunks of files that appear in git diff");
             setGroup("Formatting");
@@ -85,18 +107,18 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
 
         @TaskAction
         public final void formatDiff() throws IOException, InterruptedException {
+            var projectDir = getProjectDirectory().get().getAsFile().toPath();
             if (getNativeImage().isPresent()) {
                 log.info("Using the native-image formatter");
                 FormatDiff.formatDiff(
-                        getProject().getProjectDir().toPath(),
+                        projectDir,
                         new NativeImageFormatterService(
                                 getNativeImage().get().getAsFile().toPath()));
             } else {
                 log.info("Using the Java-based formatter");
-                JavaFormatExtension extension =
-                        getProject().getRootProject().getExtensions().getByType(JavaFormatExtension.class);
-                FormatterService formatterService = extension.serviceLoad();
-                FormatDiff.formatDiff(getProject().getProjectDir().toPath(), formatterService);
+                FormatDiff.formatDiff(
+                        projectDir,
+                        FormatterServiceLoader.load(getFormatterClasspath().getFiles()));
             }
         }
     }

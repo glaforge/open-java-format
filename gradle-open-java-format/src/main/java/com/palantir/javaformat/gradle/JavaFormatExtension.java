@@ -17,96 +17,18 @@
 package com.palantir.javaformat.gradle;
 
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.palantir.javaformat.java.FormatterService;
-import java.io.UncheckedIOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import org.gradle.api.GradleException;
 import org.gradle.api.artifacts.Configuration;
 
 public class JavaFormatExtension {
-    /**
-     * The javac packages the formatter reads. A plain Gradle JVM exports none of them, and the formatter then fails
-     * on its first file with an IllegalAccessError that names a class and a module and nothing the user can change.
-     * The check below fails before the first file instead, with the two settings that make it work.
-     */
-    private static final ImmutableList<String> JAVAC_PACKAGES = ImmutableList.of(
-            "com.sun.tools.javac.api",
-            "com.sun.tools.javac.file",
-            "com.sun.tools.javac.parser",
-            "com.sun.tools.javac.tree",
-            "com.sun.tools.javac.util");
-
-    private static final String DOCS = "https://openjavaformat.dev/get-started/gradle/#choose-how-the-formatter-runs";
-
-    private final Configuration configuration;
     private final Supplier<FormatterService> memoizedService;
 
     public JavaFormatExtension(Configuration configuration) {
-        this.configuration = configuration;
-        this.memoizedService = Suppliers.memoize(this::serviceLoadInternal);
+        this.memoizedService = Suppliers.memoize(() -> FormatterServiceLoader.load(configuration.getFiles()));
     }
 
     public FormatterService serviceLoad() {
         return memoizedService.get();
-    }
-
-    @SuppressWarnings("for-rollout:NullAway")
-    private FormatterService serviceLoadInternal() {
-        URL[] jarUris = configuration.getFiles().stream()
-                .map(file -> {
-                    try {
-                        return file.toURI().toURL();
-                    } catch (MalformedURLException e) {
-                        throw new UncheckedIOException("Unable to convert URI to URL: " + file, e);
-                    }
-                })
-                .toArray(URL[]::new);
-
-        ClassLoader classLoader = new URLClassLoader(jarUris, FormatterService.class.getClassLoader());
-        checkJavacIsExportedTo(classLoader);
-        return Iterables.getOnlyElement(ServiceLoader.load(FormatterService.class, classLoader));
-    }
-
-    /**
-     * Fails with the fix spelt out when this JVM does not export javac's internals to the formatter's class loader:
-     * either the native binary, which runs outside the JVM, or the {@code --add-exports} flags on the Gradle JVM.
-     */
-    private static void checkJavacIsExportedTo(ClassLoader formatterClassLoader) {
-        Module jdkCompiler = ModuleLayer.boot()
-                .findModule("jdk.compiler")
-                .orElseThrow(() -> new GradleException("open-java-format needs the module jdk.compiler, which this"
-                        + " Gradle JVM does not have: run Gradle on a JDK, not a JRE. See " + DOCS));
-        Module formatter = formatterClassLoader.getUnnamedModule();
-        List<String> notExported = JAVAC_PACKAGES.stream()
-                .filter(javacPackage -> !jdkCompiler.isExported(javacPackage, formatter))
-                .collect(Collectors.toList());
-        if (notExported.isEmpty()) {
-            return;
-        }
-        String addExports = JAVAC_PACKAGES.stream()
-                .map(javacPackage -> "--add-exports jdk.compiler/" + javacPackage + "=ALL-UNNAMED")
-                .collect(Collectors.joining(" "));
-        throw new GradleException("""
-            open-java-format cannot run inside this Gradle JVM: module jdk.compiler does not export %s to it. \
-            Set one of these in gradle.properties:
-
-              openjavaformat.native.formatter=true
-                  runs the formatter as a native binary, outside the Gradle JVM (Linux with glibc, macOS, \
-            Windows on x86-64)
-
-              org.gradle.jvmargs=%s
-                  opens javac's packages to the Gradle JVM; if the file already sets org.gradle.jvmargs, add \
-            the flags to that line
-
-            See %s\
-            """.formatted(String.join(", ", notExported), addExports, DOCS));
     }
 }
