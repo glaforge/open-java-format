@@ -86,8 +86,11 @@ public final class NativeImageNoticeStartupActivity implements StartupActivity.D
         if (status instanceof Status.NotDownloaded) {
             return Optional.of(new Notice.Missing());
         }
-        if (status instanceof Status.Outdated outdated && !outdated.available().equals(ignoredVersion)) {
-            return Optional.of(new Notice.Outdated(outdated.installed().version(), outdated.available()));
+        // Only a binary older than the plugin is outdated; after a rollback the settings page alone offers the change.
+        if (status instanceof Status.OtherVersion other
+                && EmbeddedNativeImage.isOlder(other.installed().version(), other.pluginVersion())
+                && !other.pluginVersion().equals(ignoredVersion)) {
+            return Optional.of(new Notice.Outdated(other.installed().version(), other.pluginVersion()));
         }
         return Optional.empty();
     }

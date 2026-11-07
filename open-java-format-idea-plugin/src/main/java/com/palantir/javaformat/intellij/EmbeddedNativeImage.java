@@ -102,8 +102,11 @@ final class EmbeddedNativeImage {
 
         record Current(Installed installed) implements Status {}
 
-        /** The binary of an earlier version, which keeps formatting until the newer one is downloaded. */
-        record Outdated(Installed installed, String available) implements Status {}
+        /**
+         * The binary of a version other than the plugin's: an earlier one, or a later one once the plugin is rolled
+         * back. It keeps formatting until the plugin's version is downloaded.
+         */
+        record OtherVersion(Installed installed, String pluginVersion) implements Status {}
     }
 
     private sealed interface Activity {
@@ -149,33 +152,28 @@ final class EmbeddedNativeImage {
             return new Status.DownloadFailed(failed.version(), failed.reason());
         }
         return installed()
-                .<Status>map(installed -> isOlder(installed.version(), pluginVersion)
-                        ? new Status.Outdated(installed, pluginVersion)
+                .<Status>map(installed -> offersPluginVersion(installed.version(), pluginVersion)
+                        ? new Status.OtherVersion(installed, pluginVersion)
                         : new Status.Current(installed))
                 .orElseGet(Status.NotDownloaded::new);
     }
 
     /**
-     * Whether installed is older than available. Only a release is ever newer: a plugin built from a commit has a
-     * version such as 21.0.1-3-gabc1234, or a bare hash, and Maven Central has no binary for either.
+     * Whether the plugin's version can replace the installed binary: it is another version, and a release. A plugin
+     * built from a commit has a version such as 21.0.1-3-gabc1234, or a bare hash, and Maven Central has no binary for
+     * either.
      */
+    static boolean offersPluginVersion(String installed, String pluginVersion) {
+        return RELEASE.matcher(pluginVersion).matches() && !installed.equals(pluginVersion);
+    }
+
+    /** Whether installed is older than available; a version that does not parse is neither. */
     static boolean isOlder(String installed, String available) {
         var installedVersion = FormatterVersion.parse(installed);
         var availableVersion = FormatterVersion.parse(available);
-        return RELEASE.matcher(available).matches()
-                && installedVersion.isPresent()
+        return installedVersion.isPresent()
                 && availableVersion.isPresent()
                 && installedVersion.get().compareTo(availableVersion.get()) < 0;
-    }
-
-    /**
-     * Downloads the binary of the given version unless it is the one installed: the settings page's Download, Retry and
-     * Update to latest, whose latest is the plugin's own version.
-     */
-    void update(@Nullable Project project, String version) {
-        if (!installed().map(Installed::version).equals(Optional.of(version))) {
-            download(project, version);
-        }
     }
 
     /**

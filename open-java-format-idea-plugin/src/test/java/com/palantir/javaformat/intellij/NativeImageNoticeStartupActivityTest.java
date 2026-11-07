@@ -32,7 +32,7 @@ final class NativeImageNoticeStartupActivityTest {
 
     private static final Installed INSTALLED =
             new Installed("21.0.1", Path.of("/system/open-java-format/native/21.0.1/open-java-format"));
-    private static final Status OUTDATED = new Status.Outdated(INSTALLED, "21.0.2");
+    private static final Status OUTDATED = new Status.OtherVersion(INSTALLED, "21.0.2");
 
     private final PalantirJavaFormatSettings settings = new PalantirJavaFormatSettings();
 
@@ -79,6 +79,14 @@ final class NativeImageNoticeStartupActivityTest {
         assertThat(NativeImageNoticeStartupActivity.notice(javaBased, OUTDATED, null))
                 .isEmpty();
         assertThat(NativeImageNoticeStartupActivity.notice(disabled, OUTDATED, null))
+                .isEmpty();
+    }
+
+    @Test
+    void staysQuietAboutABinaryNewerThanThePlugin() {
+        // The plugin was rolled back: the settings page offers its version, but nothing is outdated.
+        assertThat(NativeImageNoticeStartupActivity.notice(
+                        settings, new Status.OtherVersion(INSTALLED, "21.0.0"), null))
                 .isEmpty();
     }
 

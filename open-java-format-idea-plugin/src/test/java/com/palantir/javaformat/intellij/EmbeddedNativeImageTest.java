@@ -147,34 +147,16 @@ final class EmbeddedNativeImageTest {
     }
 
     @Test
-    void tellsAnOutdatedBinaryFromACurrentOne() throws Exception {
+    void offersThePluginsVersionWhenTheBinaryIsAnother() throws Exception {
         var installed = installByHand("21.0.1");
 
         assertThat(embedded.status("21.0.1")).isEqualTo(new Status.Current(installed));
-        assertThat(embedded.status("21.0.2")).isEqualTo(new Status.Outdated(installed, "21.0.2"));
-        // A plugin built from a commit cannot download its own version, so nothing newer is on offer.
+        assertThat(embedded.status("21.0.2")).isEqualTo(new Status.OtherVersion(installed, "21.0.2"));
+        // A plugin rolled back to an earlier version wants that version's binary too.
+        assertThat(embedded.status("21.0.0")).isEqualTo(new Status.OtherVersion(installed, "21.0.0"));
+        // A plugin built from a commit cannot download its own version, so nothing is on offer.
         assertThat(embedded.status("2b233feb")).isEqualTo(new Status.Current(installed));
         assertThat(embedded.status("21.0.1-15-gcd4ee30.dirty")).isEqualTo(new Status.Current(installed));
-    }
-
-    @Test
-    void updatesToThePluginsVersion() throws Exception {
-        installByHand("21.0.0");
-        publish(BINARY, sha256(BINARY));
-
-        embedded.update(null, "21.0.1");
-
-        assertThat(embedded.installed()).map(Installed::version).hasValue("21.0.1");
-    }
-
-    @Test
-    void leavesTheBinaryOfThePluginsVersionAlone() throws Exception {
-        // Nothing is published, so a download would fail and say so.
-        var installed = installByHand("21.0.1");
-
-        embedded.update(null, "21.0.1");
-
-        assertThat(embedded.status("21.0.1")).isEqualTo(new Status.Current(installed));
     }
 
     @Test
