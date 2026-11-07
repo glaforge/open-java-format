@@ -23,9 +23,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.gradle.testkit.runner.BuildResult;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class PalantirJavaFormatPluginTest {
 
     /** ./gradlew writeImplClasspath generates this file. */
@@ -40,6 +45,9 @@ final class PalantirJavaFormatPluginTest {
             "palantirJavaFormatNative files(file(\"" + NATIVE_IMAGE_FILE + "\").text)";
 
     private static final String MAIN_JAVA = "src/main/java/Main.java";
+
+    @Parameter
+    private boolean configurationCache;
 
     @TempDir
     private Path projectDir;
@@ -56,17 +64,16 @@ final class PalantirJavaFormatPluginTest {
         boolean nativeFormatter = extraGradleProperties != null && !extraGradleProperties.isBlank();
 
         GradleTestProject project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
                 .plugins("java", "dev.openjavaformat.java-format", "idea")
                 .withJavacInternalExports()
                 .gradleProperties(nativeFormatter ? extraGradleProperties : "")
-                .buildGradle(
-                        """
-                        dependencies {
-                            palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                            %s
-                        }
-                        """,
-                        CLASSPATH_FILE, nativeFormatter ? NATIVE_CONFIG : "");
+                .buildGradle("""
+                    dependencies {
+                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
+                        %s
+                    }
+                    """, CLASSPATH_FILE, nativeFormatter ? NATIVE_CONFIG : "");
 
         executeGitCommand(project, "git", "init");
         executeGitCommand(project, "git", "config", "user.name", "Foo");
@@ -74,46 +81,40 @@ final class PalantirJavaFormatPluginTest {
         // The repository this runs in may sign commits; a throwaway one has no key to sign with.
         executeGitCommand(project, "git", "config", "commit.gpgsign", "false");
 
-        project.writeFile(
-                MAIN_JAVA,
-                """
-                class Main {
-                    public static void crazyExistingFormatting  (  String... args) {
+        project.writeFile(MAIN_JAVA, """
+            class Main {
+                public static void crazyExistingFormatting  (  String... args) {
 
-                    }
                 }
-                """);
+            }
+            """);
 
         executeGitCommand(project, "git", "add", ".");
         executeGitCommand(project, "git", "commit", "-m", "Commit");
 
-        project.writeFile(
-                MAIN_JAVA,
-                """
-                class Main {
-                    public static void crazyExistingFormatting  (  String... args) {
-                                                System.out.println("Reformat me please");
-                        // some comments
-                                                        System.out.println("Reformat me again please");
-                    }
+        project.writeFile(MAIN_JAVA, """
+            class Main {
+                public static void crazyExistingFormatting  (  String... args) {
+                                            System.out.println("Reformat me please");
+                    // some comments
+                                                    System.out.println("Reformat me again please");
                 }
-                """);
+            }
+            """);
 
         BuildResult result = project.succeeds("formatDiff", "--info");
 
         assertThat(result.getOutput()).contains(expectedOutput);
 
-        assertThat(project.readFile(MAIN_JAVA))
-                .isEqualTo(
-                        """
-                        class Main {
-                            public static void crazyExistingFormatting  (  String... args) {
-                                System.out.println("Reformat me please");
-                                // some comments
-                                System.out.println("Reformat me again please");
-                            }
-                        }
-                        """);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo("""
+            class Main {
+                public static void crazyExistingFormatting  (  String... args) {
+                    System.out.println("Reformat me please");
+                    // some comments
+                    System.out.println("Reformat me again please");
+                }
+            }
+            """);
     }
 
     private void executeGitCommand(GradleTestProject project, String... command)

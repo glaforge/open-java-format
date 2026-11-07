@@ -22,9 +22,14 @@ import java.io.File;
 import java.nio.file.Path;
 import org.gradle.testkit.runner.BuildResult;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class PalantirJavaFormatSpotlessPluginTest {
 
     /** ./gradlew writeImplClasspath generates this file. */
@@ -39,6 +44,9 @@ final class PalantirJavaFormatSpotlessPluginTest {
             "palantirJavaFormatNative files(file(\"" + NATIVE_IMAGE_FILE + "\").text)";
 
     private static final String MAIN_JAVA = "src/main/java/Main.java";
+
+    @Parameter
+    private boolean configurationCache;
 
     @TempDir
     private Path projectDir;
@@ -61,6 +69,7 @@ final class PalantirJavaFormatSpotlessPluginTest {
         String extraDependencies = extraGradleProperties == null ? "" : NATIVE_CONFIG;
 
         GradleTestProject project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
                 // The spotless plugin dependency is already brought in by open-java-format
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
