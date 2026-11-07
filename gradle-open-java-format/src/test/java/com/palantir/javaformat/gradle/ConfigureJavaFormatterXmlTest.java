@@ -25,7 +25,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
@@ -77,22 +76,6 @@ final class ConfigureJavaFormatterXmlTest {
                 <option value="bar"/>
               </list>
             </option>
-            <option name="nativeImageClassPath" value="nativeFoo"/>
-          </component>
-        </root>
-        """;
-
-    @Language("xml")
-    private static final String EXPECTED_WITHOUT_NATIVE = """
-        <root>
-          <component name="PalantirJavaFormatSettings">
-            <option name="enabled" value="true"/>
-            <option name="implementationClassPath">
-              <list>
-                <option value="foo"/>
-                <option value="bar"/>
-              </list>
-            </option>
           </component>
         </root>
         """;
@@ -105,8 +88,7 @@ final class ConfigureJavaFormatterXmlTest {
     void configure_missingEntireBlock_added() {
         Node node = parseXml(MISSING_ENTIRE_BLOCK);
 
-        ConfigureJavaFormatterXml.configureJavaFormat(
-                node, List.of(URI.create("foo"), URI.create("bar")), Optional.of(URI.create("nativeFoo")));
+        ConfigureJavaFormatterXml.configureJavaFormat(node, List.of(URI.create("foo"), URI.create("bar")));
 
         assertThat(xmlToString(node)).isEqualTo(EXPECTED);
     }
@@ -115,8 +97,7 @@ final class ConfigureJavaFormatterXmlTest {
     void configure_missingClassPath_added() {
         Node node = parseXml(MISSING_CLASS_PATH);
 
-        ConfigureJavaFormatterXml.configureJavaFormat(
-                node, List.of(URI.create("foo"), URI.create("bar")), Optional.of(URI.create("nativeFoo")));
+        ConfigureJavaFormatterXml.configureJavaFormat(node, List.of(URI.create("foo"), URI.create("bar")));
 
         String expected = """
             <root>
@@ -129,7 +110,6 @@ final class ConfigureJavaFormatterXmlTest {
                     <option value="bar"/>
                   </list>
                 </option>
-                <option name="nativeImageClassPath" value="nativeFoo"/>
               </component>
             </root>
             """;
@@ -138,23 +118,32 @@ final class ConfigureJavaFormatterXmlTest {
     }
 
     @Test
-    void configure_existingClassPath_modified() {
+    void configure_existingClassPath_modified_andTheNativeImageOfEarlierVersionsRemoved() {
+        // Up to 21.0.1 the plugin wrote nativeImageClassPath for openjavaformat.native.formatter=true. The IDE plugin
+        // switches the native binary on by a setting of its own now, and no longer reads it.
         Node node = parseXml(EXISTING_CLASS_PATH);
 
-        ConfigureJavaFormatterXml.configureJavaFormat(
-                node, List.of(URI.create("foo"), URI.create("bar")), Optional.of(URI.create("nativeFoo")));
+        ConfigureJavaFormatterXml.configureJavaFormat(node, List.of(URI.create("foo"), URI.create("bar")));
 
         assertThat(xmlToString(node)).isEqualTo(EXPECTED);
     }
 
     @Test
-    void configure_noNativeImageClassPath_removal() {
-        Node node = parseXml(EXISTING_CLASS_PATH);
+    void configure_leavesTheIdePluginsNativeBinarySettingsAlone() {
+        Node node = parseXml("""
+            <root>
+                <component name="PalantirJavaFormatSettings">
+                    <option name="useNativeImage" value="true"/>
+                    <option name="nativeImagePath" value="/opt/open-java-format"/>
+                </component>
+            </root>
+            """);
 
-        ConfigureJavaFormatterXml.configureJavaFormat(
-                node, List.of(URI.create("foo"), URI.create("bar")), Optional.empty());
+        ConfigureJavaFormatterXml.configureJavaFormat(node, List.of(URI.create("foo")));
 
-        assertThat(xmlToString(node)).isEqualTo(EXPECTED_WITHOUT_NATIVE);
+        assertThat(xmlToString(node))
+                .contains("<option name=\"useNativeImage\" value=\"true\"/>")
+                .contains("<option name=\"nativeImagePath\" value=\"/opt/open-java-format\"/>");
     }
 
     @ParameterizedTest

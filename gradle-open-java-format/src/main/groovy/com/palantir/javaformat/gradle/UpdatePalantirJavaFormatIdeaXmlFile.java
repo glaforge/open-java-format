@@ -18,17 +18,13 @@ package com.palantir.javaformat.gradle;
 
 import java.io.File;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.PathSensitive;
-import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.work.DisableCachingByDefault;
 
@@ -40,30 +36,15 @@ public abstract class UpdatePalantirJavaFormatIdeaXmlFile extends DefaultTask {
     public abstract ConfigurableFileCollection getImplementationConfig();
 
     @org.gradle.api.tasks.Optional
-    @InputFiles
-    @PathSensitive(PathSensitivity.NAME_ONLY)
-    public abstract ConfigurableFileCollection getNativeImageConfig();
-
-    @org.gradle.api.tasks.Optional
     @OutputFile
     public abstract RegularFileProperty getXmlOutputFile();
-
-    @org.gradle.api.tasks.Optional
-    @OutputFile
-    public abstract RegularFileProperty getNativeImageOutputFile();
 
     @TaskAction
     public final void updateXml() {
         List<URI> uris =
                 getImplementationConfig().getFiles().stream().map(File::toURI).toList();
-        Optional<URI> nativeUri = getNativeImageConfig().getFiles().stream()
-                .findFirst()
-                .map(File::toURI)
-                .map(uri -> NativeImageAtomicCopy.copyToCacheDir(
-                        Paths.get(uri),
-                        getNativeImageOutputFile().getAsFile().get().toPath()));
         XmlUtils.updateIdeaXmlFile(
                 getXmlOutputFile().getAsFile().get(),
-                node -> ConfigureJavaFormatterXml.configureJavaFormat(node, uris, nativeUri));
+                node -> ConfigureJavaFormatterXml.configureJavaFormat(node, uris));
     }
 }

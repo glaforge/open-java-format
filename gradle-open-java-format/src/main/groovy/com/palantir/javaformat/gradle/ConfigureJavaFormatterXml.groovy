@@ -20,7 +20,7 @@ import java.lang.module.ModuleDescriptor
 
 class ConfigureJavaFormatterXml {
 
-    static void configureJavaFormat(Node rootNode, List<URI> uris, Optional<URI> nativeImageUri) {
+    static void configureJavaFormat(Node rootNode, List<URI> uris) {
         def settings = matchOrCreateChild(rootNode, 'component', [name: 'PalantirJavaFormatSettings'])
         // enable
         matchOrCreateChild(settings, 'option', [name: 'enabled']).attributes().put('value', 'true')
@@ -31,12 +31,9 @@ class ConfigureJavaFormatterXml {
         uris.forEach { URI uri ->
             listItems.appendNode('option', [value: uri])
         }
-        // configure nativeImageClasspath
-        nativeImageUri.ifPresentOrElse({ URI uri ->
-            matchOrCreateChild(settings, 'option', [name: 'nativeImageClassPath']).attributes().put('value', uri)
-        }, {
-            matchChild(settings, 'option', [name: 'nativeImageClassPath']).ifPresent { it.parent().remove(it) }
-        })
+        // Earlier versions wrote the native binary for openjavaformat.native.formatter=true. The IDE plugin has a
+        // setting of its own for that now, useNativeImage, which is left alone, and no longer reads this option.
+        matchChild(settings, 'option', [name: 'nativeImageClassPath']).ifPresent { it.parent().remove(it) }
     }
 
     static void configureWorkspaceXml(Node rootNode) {

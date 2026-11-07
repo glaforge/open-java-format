@@ -18,25 +18,13 @@ package com.palantir.javaformat.gradle;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import org.gradle.StartParameter;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ConfigurationContainer;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.TaskProvider;
 
 public abstract class PalantirJavaFormatIdeaPlugin implements Plugin<Project> {
-
-    @Nested
-    protected abstract NativeImageSupport getNativeImageSupport();
-
-    @Inject
-    protected abstract ConfigurationContainer getConfigurations();
 
     private static final String MIN_IDEA_PLUGIN_VERSION = "2.57.0";
 
@@ -51,26 +39,13 @@ public abstract class PalantirJavaFormatIdeaPlugin implements Plugin<Project> {
             TaskProvider<UpdatePalantirJavaFormatIdeaXmlFile> updateOpenJavaFormatXml = rootProject
                     .getTasks()
                     .register("updateOpenJavaFormatXml", UpdatePalantirJavaFormatIdeaXmlFile.class, task -> {
+                        // The formatter's classpath only. Whether the IDE runs the native binary is a setting of the
+                        // IDE plugin, for any project: openjavaformat.native.formatter is about this build alone.
                         task.getXmlOutputFile().set(rootProject.file(".idea/open-java-format.xml"));
                         task.getImplementationConfig()
                                 .from(rootProject
                                         .getConfigurations()
                                         .getByName(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME));
-                        maybeGetNativeImplConfiguration().ifPresent(config -> {
-                            task.getNativeImageConfig().from(config);
-                            task.getNativeImageOutputFile()
-                                    .fileProvider(rootProject.provider(() -> rootProject
-                                            .getGradle()
-                                            .getGradleUserHomeDir()
-                                            .toPath()
-                                            .resolve("open-java-format-caches/")
-                                            .resolve(Paths.get(task.getNativeImageConfig()
-                                                            .getSingleFile()
-                                                            .toURI())
-                                                    .getFileName()
-                                                    .toString())
-                                            .toFile()));
-                        });
                     });
 
             TaskProvider<UpdateWorkspaceXmlFile> updateWorkspaceXml = rootProject
@@ -107,11 +82,5 @@ public abstract class PalantirJavaFormatIdeaPlugin implements Plugin<Project> {
                 .addAll(startParameter.getTaskNames())
                 .addAll(Stream.of(tasks).map(task -> ":" + task.getName()).toList())
                 .build());
-    }
-
-    private Optional<Configuration> maybeGetNativeImplConfiguration() {
-        return getNativeImageSupport().isNativeImageConfigured()
-                ? Optional.of(getConfigurations().getByName(NativeImageFormatProviderPlugin.NATIVE_CONFIGURATION_NAME))
-                : Optional.empty();
     }
 }
