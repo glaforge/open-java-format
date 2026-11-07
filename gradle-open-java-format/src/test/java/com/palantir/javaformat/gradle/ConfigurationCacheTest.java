@@ -19,11 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.palantir.javaformat.gradle.testing.GradleTestProject;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.TaskOutcome;
@@ -98,7 +97,7 @@ final class ConfigurationCacheTest {
     }
 
     @Test
-    void spotlessJava_is_up_to_date_until_the_formatter_jars_change() throws IOException {
+    void spotlessJava_is_up_to_date_until_the_formatter_jars_change() throws IOException, URISyntaxException {
         var jars = Files.readString(CLASSPATH_FILE).trim();
         var project = new GradleTestProject(projectDir)
                 .configurationCache(true)
@@ -122,11 +121,11 @@ final class ConfigurationCacheTest {
         assertThat(unchanged.getOutput()).contains(REUSED);
         assertThat(spotlessJava(unchanged)).isEqualTo(TaskOutcome.UP_TO_DATE);
 
-        // Spotless signs the jars by name, size and content, as another formatter version changes them.
-        var extraJar = projectDir.resolve("extra.jar");
-        try (var jar = new JarOutputStream(Files.newOutputStream(extraJar))) {
-            jar.putNextEntry(new JarEntry("extra.txt"));
-        }
+        // Spotless signs the jars by name, size and content, as another formatter version changes them. The extra jar
+        // is JUnit's, not one written into projectDir: the daemon keeps the formatter's jars open after the build, and
+        // Windows does not delete an open file.
+        var extraJar = Path.of(
+                Test.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         project.writeFile("formatter.classpath", jars + File.pathSeparator + extraJar);
 
         assertThat(spotlessJava(project.succeeds("spotlessCheck"))).isEqualTo(TaskOutcome.SUCCESS);
