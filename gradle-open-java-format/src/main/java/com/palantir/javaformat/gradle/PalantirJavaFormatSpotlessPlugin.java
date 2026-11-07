@@ -17,10 +17,9 @@ package com.palantir.javaformat.gradle;
 
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.google.common.collect.ImmutableList;
-import com.palantir.javaformat.java.FormatterService;
-import java.util.function.Supplier;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPluginExtension;
 
 public abstract class PalantirJavaFormatSpotlessPlugin implements Plugin<Project> {
     // The spotless gradle plugin got renamed to 'com.diffplug.spotless' at version 5.0.0
@@ -32,16 +31,19 @@ public abstract class PalantirJavaFormatSpotlessPlugin implements Plugin<Project
         Project rootProject = project.getRootProject();
         rootProject.getPluginManager().apply(PalantirJavaFormatProviderPlugin.class);
 
-        Supplier<FormatterService> memoizedService =
-                rootProject.getExtensions().getByType(JavaFormatExtension.class)::serviceLoad;
-
         project.getPluginManager().withPlugin("java", _javaPlugin -> {
             SPOTLESS_PLUGINS.forEach(spotlessPluginId -> project.getPluginManager()
                     .withPlugin(spotlessPluginId, _spotlessPlugin -> {
                         // Not before this point: Gradle's decoration of SpotlessInterop loads Spotless classes, which
                         // are missing from a project that never applies Spotless.
-                        SpotlessInterop spotlessInterop =
-                                rootProject.getObjects().newInstance(SpotlessInterop.class, memoizedService);
+                        SpotlessInterop spotlessInterop = rootProject
+                                .getObjects()
+                                .newInstance(
+                                        SpotlessInterop.class,
+                                        project.getProjectDir(),
+                                        project.getExtensions()
+                                                .getByType(JavaPluginExtension.class)
+                                                .getSourceSets());
                         SpotlessExtension spotlessExtension =
                                 project.getExtensions().getByType(SpotlessExtension.class);
                         spotlessExtension.java(spotlessInterop);

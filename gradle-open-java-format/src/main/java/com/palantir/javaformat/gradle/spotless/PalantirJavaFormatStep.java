@@ -18,11 +18,9 @@ package com.palantir.javaformat.gradle.spotless;
 import com.diffplug.spotless.FileSignature;
 import com.diffplug.spotless.FormatterFunc;
 import com.diffplug.spotless.FormatterStep;
+import com.google.errorprone.annotations.InlineMe;
+import com.palantir.javaformat.gradle.FormatterServiceLoader;
 import com.palantir.javaformat.java.FormatterService;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.UncheckedIOException;
 import java.util.function.Supplier;
 import org.gradle.api.artifacts.Configuration;
 
@@ -35,68 +33,36 @@ public final class PalantirJavaFormatStep {
     private static final String NAME = "open-java-format";
 
     /** Creates a step which formats everything - code, import order, and unused imports. */
-    public static FormatterStep create(Configuration palantirJavaFormat, Supplier<FormatterService> memoizedService) {
+    public static FormatterStep create(Configuration palantirJavaFormat) {
         ensureImplementationNotDirectlyLoadable();
+        // Spotless keeps a step in two forms, and neither can hold the configuration or a loaded formatter, which do
+        // not serialize. The configuration cache stores the jars, resolved when the entry is written at the earliest.
+        // The up-to-date check compares their signature, so that another formatter version makes the task run again;
+        // Spotless takes it when the task runs, or with the configuration cache when the entry is written. The
+        // formatter is loaded from the jars on first use.
         return FormatterStep.createLazy(
-                NAME, () -> new State(palantirJavaFormat::getFiles, memoizedService), State::createFormat);
+                NAME,
+                () -> FileSignature.promise(palantirJavaFormat.getFiles()),
+                FileSignature.Promised::get,
+                PalantirJavaFormatStep::createFormat);
     }
 
-    static final class State implements Serializable {
-        private static final long serialVersionUID = 1L;
+    /**
+     * Creates the same step as {@link #create(Configuration)}.
+     *
+     * @deprecated the step loads the formatter from the configuration's jars, and ignores {@code memoizedService}.
+     */
+    @Deprecated
+    @InlineMe(
+            replacement = "PalantirJavaFormatStep.create(palantirJavaFormat)",
+            imports = "com.palantir.javaformat.gradle.spotless.PalantirJavaFormatStep")
+    public static FormatterStep create(Configuration palantirJavaFormat, Supplier<FormatterService> memoizedService) {
+        return create(palantirJavaFormat);
+    }
 
-        // Kept for state serialization purposes.
-        @SuppressWarnings("unused")
-        private final String stepName = NAME;
-
-        // Spotless' `FormatterStepImpl` implements Java's `Serializable` interface in a weird way:
-        // It serializes this `State` class[1].
-        //
-        // Gradle understands Java's `Serializable`, and uses it to invalidate `@Input`s to tasks.
-        //
-        // Since FormatterStepImpl is an input to `SpotlessTask`[2], anything serialized as part of this `State`
-        // is used for up-to-date checking for the `SpotlessTask`
-        //
-        // [1]
-        // https://github.com/diffplug/spotless/blob/52654ef8c4a6191d983b10a2370d53b1ca023f7d/lib/src/main/java/com/diffplug/spotless/LazyForwardingEquality.java#L68
-        // [2]
-        // https://github.com/diffplug/spotless/blob/f32701212bf8d327c67d10c35316cb80dcdf577b/plugin-gradle/src/main/java/com/diffplug/gradle/spotless/SpotlessTask.java#L163
-        @SuppressWarnings({"unused", "FieldCanBeLocal"})
-        private FileSignature jarsSignature;
-
-        private final transient Supplier<Iterable<File>> jarsSupplier;
-
-        // Transient as this is not serializable.
-        private final transient Supplier<FormatterService> memoizedFormatter;
-
-        /**
-         * Build a cacheable state for spotless from the given jars, that uses the given {@link FormatterService}.
-         *
-         * @param jarsSupplier Supplies the jars that contain the open-java-format implementation. This is only used for caching and
-         * up-to-dateness purposes.
-         */
-        @SuppressWarnings("for-rollout:NullAway")
-        State(Supplier<Iterable<File>> jarsSupplier, Supplier<FormatterService> memoizedFormatter) {
-            this.jarsSupplier = jarsSupplier;
-            this.memoizedFormatter = memoizedFormatter;
-        }
-
-        @SuppressWarnings("NullableProblems")
-        FormatterFunc createFormat() {
-            return input -> {
-                try {
-                    // Only resolve the jars and compute the signature at execution time!
-                    Iterable<File> jars = jarsSupplier.get();
-
-                    // Not a performance issue, as Spotless caches this
-                    // https://github.com/diffplug/spotless/blob/228eb10af382b19e130d8d9479f7a95238cb4358/lib/src/main/java/com/diffplug/spotless/FileSignature.java#L138-L143
-                    this.jarsSignature = FileSignature.signAsSet(jars);
-
-                    return memoizedFormatter.get().formatSourceReflowStringsAndFixImports(input);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            };
-        }
+    private static FormatterFunc createFormat(FileSignature jars) {
+        FormatterService formatter = FormatterServiceLoader.load(jars.files());
+        return formatter::formatSourceReflowStringsAndFixImports;
     }
 
     private static void ensureImplementationNotDirectlyLoadable() {
