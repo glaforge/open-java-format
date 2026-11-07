@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
@@ -47,6 +48,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.event.DocumentEvent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,9 +63,8 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     private final JLabel embeddedStatus;
     private final ActionLink embeddedAction;
     private final TextFieldWithBrowseButton nativeImagePath;
-    private final JTextArea formatterType;
-    private final JLabel formatterVersion;
-    private final JLabel pluginVersion;
+    private final JPanel activeFormatterRow;
+    private final JTextArea activeFormatter;
 
     // Lives from createComponent() to disposeUIResources(): the download reports its progress to the page.
     @Nullable
@@ -88,9 +89,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         this.nativeImagePath = new TextFieldWithBrowseButton(pathField);
         nativeImagePath.addBrowseFolderListener(new TextBrowseFolderListener(
                 FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor().withTitle("Native Binary"), project));
-        this.pluginVersion = new JLabel();
-        this.formatterVersion = new JLabel();
-        this.formatterType = selectableText();
+        this.activeFormatter = selectableText();
 
         var statusRow = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
         statusRow.add(embeddedStatus);
@@ -101,7 +100,22 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
                 .addComponent(statusRow)
                 .addLabeledComponent("Binary", nativeImagePath)
                 .getPanel();
-        useNativeImage.addItemListener(event -> nativeImageOptions.setVisible(useNativeImage.isSelected()));
+        // Filling its own form vertically: only then does the form put the label above the text, rather than beside
+        // the middle of a wrapped path.
+        this.activeFormatterRow = FormBuilder.createFormBuilder()
+                .addSeparator()
+                .addLabeledComponentFillVertically("Active formatter", activeFormatter)
+                .getPanel();
+
+        // The page shows what runs once it is applied, so it follows every box and the path as they change.
+        enable.addItemListener(event -> showPage());
+        useNativeImage.addItemListener(event -> showPage());
+        nativeImagePath.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
+            @Override
+            protected void textChanged(DocumentEvent event) {
+                showActiveFormatter();
+            }
+        });
 
         // Laid out here rather than by the IntelliJ GUI designer. A .form is woven into the class at build
         // time, and this build does not instrument bytecode (see build.gradle), which left every field
@@ -110,11 +124,9 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
                 .addComponent(enable)
                 .addComponent(useNativeImage)
                 .addComponent(nativeImageOptions)
-                .addLabeledComponent("Plugin version", pluginVersion)
-                .addLabeledComponent("Implementation version", formatterVersion)
-                // Last, and filling the rest of the page: only then does the form put the label at the text's first
-                // line rather than in the middle of a wrapped path.
-                .addLabeledComponentFillVertically("Formatter type", formatterType)
+                .addComponent(activeFormatterRow)
+                // Takes the rest of the page, so the rows stay at the top whichever of them are hidden.
+                .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
     }
 
@@ -167,7 +179,6 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         settings.setEnabled(enable.isSelected() ? EnabledState.ENABLED : getDisabledState());
         settings.setUseNativeImage(useNativeImage.isSelected());
         settings.setNativeImagePath(path);
-        showEmbeddedNativeImage();
     }
 
     private EnabledState getDisabledState() {
@@ -182,12 +193,9 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         PalantirJavaFormatSettings settings = PalantirJavaFormatSettings.getInstance(project);
         enable.setSelected(settings.isEnabled());
         useNativeImage.setSelected(settings.useNativeImage());
-        nativeImageOptions.setVisible(settings.useNativeImage());
         nativeImagePath.setText(
                 settings.getNativeImagePath().map(Path::toString).orElse(""));
-        pluginVersion.setText(settings.getImplementationVersion().orElse("unknown"));
-        formatterVersion.setText(getFormatterVersionText(settings));
-        showEmbeddedNativeImage();
+        showPage();
     }
 
     @Override
@@ -236,15 +244,47 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         };
     }
 
+    private void showPage() {
+        useNativeImage.setVisible(enable.isSelected());
+        nativeImageOptions.setVisible(enable.isSelected() && useNativeImage.isSelected());
+        activeFormatterRow.setVisible(enable.isSelected());
+        showEmbeddedNativeImage();
+    }
+
     private void showEmbeddedNativeImage() {
         var line = statusLine(embeddedNativeImage.status(pluginVersion()));
         embeddedStatus.setText(line.text());
         embeddedAction.setText(line.action().orElse(""));
         embeddedAction.setVisible(line.action().isPresent());
-        // What runs with the settings as applied: the embedded binary can arrive while the page is open.
-        formatterType.setText(FormatterSelection.of(
-                        PalantirJavaFormatSettings.getInstance(project), embeddedNativeImage::installedPath)
-                .describe());
+        // The embedded binary can arrive while the page is open.
+        showActiveFormatter();
+    }
+
+    /**
+     * The formatter the page would run once applied, chosen as FormatterProvider chooses it: the path typed in Binary,
+     * else the embedded binary, else the Java-based formatter.
+     */
+    private void showActiveFormatter() {
+        var pending = new PalantirJavaFormatSettings();
+        pending.setUseNativeImage(useNativeImage.isSelected());
+        try {
+            pending.setNativeImagePath(enteredNativeImagePath());
+        } catch (ConfigurationException e) {
+            // Not a path at all: shown as typed, and Apply says what is wrong with it.
+            activeFormatter.setText(nativeImagePath.getText().strip());
+            return;
+        }
+        activeFormatter.setText(
+                switch (FormatterSelection.of(pending, embeddedNativeImage::installedPath)) {
+                    case FormatterSelection.NativeImage nativeImage ->
+                        nativeImage.path().toString();
+                    case FormatterSelection.JavaBased javaBased
+                    when !javaBased.nativeImageMissing() -> "Java-based formatter";
+                    case FormatterSelection.JavaBased missing ->
+                        embeddedNativeImage.status(pluginVersion()) instanceof Status.NoImageForPlatform
+                                ? "Choose a native binary: none is published for this platform"
+                                : "Need to download version " + pluginVersion() + " from Maven Central";
+                });
     }
 
     private String pluginVersion() {
@@ -266,9 +306,9 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     }
 
     /**
-     * Read-only text that wraps at the page's width and can be selected and copied: the formatter type names the
-     * binary that runs, and the embedded one's path, deep in the IDE's system directory, would otherwise widen the
-     * page past the dialog.
+     * Read-only text that wraps at the page's width and can be selected and copied: the active formatter is often a
+     * path, and the embedded binary's, deep in the IDE's system directory, would otherwise widen the page past the
+     * dialog.
      */
     private static JTextArea selectableText() {
         var text = new JBTextArea() {
@@ -296,8 +336,4 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         return text;
     }
 
-    private static String getFormatterVersionText(PalantirJavaFormatSettings settings) {
-        String suffix = settings.injectedVersionIsOutdated() ? " (using bundled)" : " (using injected)";
-        return settings.computeFormatterVersion().orElse("(bundled)") + suffix;
-    }
 }

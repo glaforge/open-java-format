@@ -16,8 +16,10 @@ package com.palantir.javaformat.intellij;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -73,6 +75,7 @@ final class PalantirJavaFormatConfigurableTest {
         fixture.setUp();
         settings = PalantirJavaFormatSettings.getInstance(fixture.getProject());
         settings.loadState(new State());
+        settings.setEnabled(true);
         // Nothing downloaded, and nowhere to download from.
         var embedded = new EmbeddedNativeImage(
                 dir.resolve("native"), Optional.of(new NativePlatform("macos", "aarch64")), "http://127.0.0.1:1");
@@ -121,10 +124,85 @@ final class PalantirJavaFormatConfigurableTest {
     }
 
     @Test
+    void sitsUnderTools() {
+        var page = Configurable.PROJECT_CONFIGURABLE.getExtensions(fixture.getProject()).stream()
+                .filter(extension -> "open-java-format.settings".equals(extension.id))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(page.parentId).isEqualTo("tools");
+    }
+
+    @Test
+    void hasNoRowsOfVersions() {
+        // The plugin's version and the formatter's told the user nothing to act on.
+        assertThat(findAll(component, JLabel.class))
+                .extracting(JLabel::getText)
+                .doesNotContain("Plugin version", "Implementation version");
+    }
+
+    @Test
+    void showsTheNativeBinaryOnlyWhileOpenJavaFormatIsOn() throws Throwable {
+        EdtTestUtil.runInEdtAndWait(() -> {
+            var enable = findCheckBox("Enable open-java-format");
+            var useNativeImage = findCheckBox("Use native binary");
+            var path = findAll(component, TextFieldWithBrowseButton.class).get(0);
+            settings.setUseNativeImage(true);
+            configurable.reset();
+            assertThat(isDisplayed(useNativeImage)).isTrue();
+            assertThat(isDisplayed(path)).isTrue();
+
+            enable.setSelected(false);
+            assertThat(isDisplayed(useNativeImage)).isFalse();
+            assertThat(isDisplayed(path)).isFalse();
+            assertThat(isDisplayed(activeFormatter())).isFalse();
+
+            enable.setSelected(true);
+            assertThat(isDisplayed(useNativeImage)).isTrue();
+            assertThat(isDisplayed(path)).isTrue();
+        });
+    }
+
+    @Test
+    void showsTheActiveFormatterAsThePageStands() throws Throwable {
+        // What runs once the page is applied, so it follows the boxes and the path as they change.
+        var pluginVersion = settings.getImplementationVersion().orElseThrow();
+
+        EdtTestUtil.runInEdtAndWait(() -> {
+            var useNativeImage = findCheckBox("Use native binary");
+            var path = findAll(component, TextFieldWithBrowseButton.class).get(0);
+            configurable.reset();
+            assertThat(activeFormatter().getText()).isEqualTo("Java-based formatter");
+
+            useNativeImage.setSelected(true);
+            assertThat(activeFormatter().getText())
+                    .isEqualTo("Need to download version " + pluginVersion + " from Maven Central");
+
+            path.setText("/opt/open-java-format");
+            assertThat(activeFormatter().getText()).isEqualTo("/opt/open-java-format");
+
+            useNativeImage.setSelected(false);
+            assertThat(activeFormatter().getText()).isEqualTo("Java-based formatter");
+        });
+    }
+
+    @Test
+    void showsTheEmbeddedBinaryOnceItIsThere() throws Throwable {
+        var binary = installByHand("21.0.1");
+        settings.setUseNativeImage(true);
+
+        EdtTestUtil.runInEdtAndWait(() -> {
+            configurable.reset();
+
+            assertThat(activeFormatter().getText()).isEqualTo(binary.toString());
+        });
+    }
+
+    @Test
     void showsTheVersionOfThePlugin() {
-        // The "Plugin version" row: the version the platform read from the plugin's own descriptor, not "unknown".
-        // Whatever the build stamped: CI checks out without tags, so there it is a commit hash rather than a
-        // release-like version.
+        // The version the plugin downloads the native binary of: the one the platform read from the plugin's own
+        // descriptor, not "unknown". Whatever the build stamped: CI checks out without tags, so there it is a commit
+        // hash rather than a release-like version.
         assertThat(settings.getImplementationVersion())
                 .hasValueSatisfying(version -> assertThat(version).isNotBlank());
     }
@@ -210,7 +288,7 @@ final class PalantirJavaFormatConfigurableTest {
     }
 
     @Test
-    void wrapsTheFormatterTypeAndLetsItsPathBeCopied() throws Throwable {
+    void wrapsTheActiveFormatterAndLetsItsPathBeCopied() throws Throwable {
         // The embedded binary lives deep in the IDE's system directory: on one line its path made the page wider than
         // the dialog, and a label would not let anyone copy it. A long path of one's own in Binary must not either.
         var path = Path.of("/Users/someone/Library/Caches/JetBrains/IntelliJIdea2026.2/open-java-format/native/"
@@ -221,10 +299,8 @@ final class PalantirJavaFormatConfigurableTest {
         EdtTestUtil.runInEdtAndWait(() -> {
             configurable.reset();
 
-            var formatterType = findAll(component, JTextArea.class).stream()
-                    .filter(text -> text.getText().contains(path.toString()))
-                    .findFirst()
-                    .orElseThrow();
+            var formatterType = activeFormatter();
+            assertThat(formatterType.getText()).isEqualTo(path.toString());
             assertThat(formatterType.isEditable()).isFalse();
             assertThat(formatterType.getLineWrap()).isTrue();
             assertThat(component.getPreferredSize().width).isLessThan(1000);
@@ -274,6 +350,19 @@ final class PalantirJavaFormatConfigurableTest {
             }
         }
         return true;
+    }
+
+    /** The text under Active formatter: the page's one text area. */
+    private JTextArea activeFormatter() {
+        return findAll(component, JTextArea.class).stream().collect(onlyElement());
+    }
+
+    private Path installByHand(String version) throws IOException {
+        var binary = Files.createDirectories(dir.resolve("native").resolve(version))
+                .resolve("open-java-format-macos_aarch64");
+        Files.writeString(binary, "#!/bin/sh\n");
+        assertThat(binary.toFile().setExecutable(true)).isTrue();
+        return binary;
     }
 
     private Path executable(String name) throws IOException {

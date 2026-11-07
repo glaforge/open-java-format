@@ -19,8 +19,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Which formatter a project's settings run. FormatterProvider starts it, and the settings page shows it as the
- * formatter type, so the page cannot claim one formatter while another runs.
+ * Which formatter a project's settings run. FormatterProvider starts it, and the settings page shows it as the active
+ * formatter, so the page cannot claim one formatter while another runs.
  */
 sealed interface FormatterSelection {
 
@@ -39,22 +39,8 @@ sealed interface FormatterSelection {
                 .orElseGet(() -> new JavaBased(true));
     }
 
-    String describe();
-
-    record NativeImage(Path path, boolean embedded) implements FormatterSelection {
-        @Override
-        public String describe() {
-            return "Native binary, " + (embedded ? "embedded" : "custom") + ": " + path;
-        }
-    }
+    record NativeImage(Path path, boolean embedded) implements FormatterSelection {}
 
     /** nativeImageMissing: the native formatter is switched on, but there is no binary to run. */
-    record JavaBased(boolean nativeImageMissing) implements FormatterSelection {
-        @Override
-        public String describe() {
-            return nativeImageMissing
-                    ? "Java-based formatter: the native binary is not downloaded"
-                    : "Java-based formatter";
-        }
-    }
+    record JavaBased(boolean nativeImageMissing) implements FormatterSelection {}
 }
