@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -67,6 +68,7 @@ final class EmbeddedNativeImage {
 
     private final AtomicReference<Activity> activity = new AtomicReference<>(new Activity.Idle());
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean noticeShown = new AtomicBoolean();
 
     EmbeddedNativeImage() {
         this(
@@ -263,6 +265,11 @@ final class EmbeddedNativeImage {
         } catch (IOException e) {
             log.warn("open-java-format: cannot remove old native binaries from " + root, e);
         }
+    }
+
+    /** True the first time it is asked in an IDE session: the notice about the binary is shown once, not per project. */
+    boolean claimSessionNotice() {
+        return noticeShown.compareAndSet(false, true);
     }
 
     /** Calls the listener on the EDT whenever the status may have changed, until parent is disposed. */

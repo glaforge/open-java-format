@@ -21,6 +21,7 @@ class Notifications {
     static final String GENERIC_ERROR_NOTIFICATION_GROUP = "open-java-format error";
     static final String PARSING_ERROR_NOTIFICATION_GROUP = "open-java-format parsing error";
     static final String PARSING_ERROR_TITLE = PARSING_ERROR_NOTIFICATION_GROUP;
+    static final String NATIVE_IMAGE_NOTIFICATION_GROUP = "open-java-format native binary";
 
     static String parsingErrorMessage(String filename) {
         return "open-java-format failed. Does " + filename + " have syntax errors?";
@@ -28,5 +29,13 @@ class Notifications {
 
     static String formatterFailedMessage(String filename) {
         return "open-java-format could not run the formatter on " + filename + ". The details are in idea.log.";
+    }
+
+    static String nativeImageOutdatedMessage(String installed, String available) {
+        return "The native binary " + installed + " is outdated, " + available + " is available.";
+    }
+
+    static String nativeImageMissingMessage() {
+        return "The native binary is not downloaded, so the Java-based formatter formats instead.";
     }
 }

@@ -27,8 +27,10 @@
                          nonDefaultProject="true"/>
     <projectService serviceImplementation="com.palantir.javaformat.intellij.PalantirJavaFormatSettings"/>
     <postStartupActivity implementation="com.palantir.javaformat.intellij.InitialConfigurationStartupActivity"/>
+    <postStartupActivity implementation="com.palantir.javaformat.intellij.NativeImageNoticeStartupActivity"/>
     <notificationGroup displayType="BALLOON" id="open-java-format parsing error"
                        isLogByDefault="false"/>
+    <notificationGroup displayType="STICKY_BALLOON" id="open-java-format native binary"/>
   </extensions>
 
 </idea-plugin>
