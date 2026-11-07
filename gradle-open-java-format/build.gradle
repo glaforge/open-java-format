@@ -162,7 +162,6 @@ tasks.named("test").configure {
         // `native` CI jobs, which pass it. Keep this list in sync with the test classes that
         // read build/nativeImage.path.
         exclude '**/PalantirJavaFormatPluginTest.class'
-        exclude '**/PalantirJavaFormatIdeaPluginTest.class'
         exclude '**/PalantirJavaFormatSpotlessPluginTest.class'
         exclude '**/FormatDiffTest.class'
     }

@@ -23,7 +23,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.palantir.javaformat.gradle.testing.GradleTestProject;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -37,32 +36,25 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 final class PalantirJavaFormatIdeaPluginTest {
 
-    // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
-    private static final String NATIVE_IMAGE_FILE =
-            new File("build/nativeImage.path").getAbsolutePath().replace('\\', '/');
-
-    private static final String NATIVE_CONFIG =
-            "palantirJavaFormatNative files(file(\"" + NATIVE_IMAGE_FILE + "\").text)";
-
     private static final ObjectMapper XML_MAPPER = new XmlMapper();
 
     @TempDir
     private Path projectDir;
 
+    // openjavaformat.native.formatter is about the build alone: the IDE plugin switches the native binary on by a
+    // setting of its own, so the IDE configuration is the same either way, and no native image is needed here.
     @ParameterizedTest(name = "extraGradleProperties={0}")
     @ValueSource(strings = {"", "openjavaformat.native.formatter=true"})
     void idea_configures_xml_files(String extraGradleProperties) throws IOException {
         GradleTestProject project = new GradleTestProject(projectDir)
                 .plugins("dev.openjavaformat.java-format-idea", "idea")
                 .gradleProperties(extraGradleProperties)
-                .buildGradle(
-                        """
-                        dependencies {
-                            palantirJavaFormat project.files() // no need to store the real thing in here
-                            %s
-                        }
-                        """,
-                        extraGradleProperties.isBlank() ? "" : NATIVE_CONFIG);
+                .buildGradle("""
+                    dependencies {
+                        palantirJavaFormat project.files() // no need to store the real thing in here
+                        palantirJavaFormatNative project.files()
+                    }
+                    """);
 
         BuildResult result = project.succeeds("idea");
 
@@ -84,10 +76,7 @@ final class PalantirJavaFormatIdeaPluginTest {
                 .toList();
 
         assertThat(allOptions).anyMatch(o -> "implementationClassPath".equals(o.name()));
-
-        if (extraGradleProperties.contains("openjavaformat.native.formatter=true")) {
-            assertThat(allOptions).anyMatch(o -> "nativeImageClassPath".equals(o.name()));
-        }
+        assertThat(allOptions).noneMatch(o -> "nativeImageClassPath".equals(o.name()));
 
         assertThat(project.file(".idea/workspace.xml")).exists();
 
