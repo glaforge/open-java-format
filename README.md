@@ -23,7 +23,7 @@ and published from this repository.
 | [Maven Central](https://central.sonatype.com/namespace/dev.openjavaformat) | `dev.openjavaformat:open-java-format`, with `-spi`, `-native` and `-jdk-bootstrap`, and the Maven plugin `dev.openjavaformat:fmt-maven-plugin` from [its own repository](https://github.com/openjavaformat/fmt-maven-plugin) |
 | [Gradle Plugin Portal](https://plugins.gradle.org/plugin/dev.openjavaformat.java-format) | `dev.openjavaformat.java-format` |
 | [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/34359-open-java-format) | the IntelliJ IDEA plugin |
-| [GitHub Releases](https://github.com/openjavaformat/open-java-format/releases/latest) | native binaries, a runnable jar, the Gradle, IntelliJ and Eclipse plugins, every file signed |
+| [GitHub Releases](https://github.com/openjavaformat/open-java-format/releases/latest) | native binaries, a runnable jar, the Gradle, IntelliJ and Eclipse plugins, the WebAssembly module of [the playground](https://openjavaformat.dev/playground/), every file signed |
 
 Why the project exists is in the [manifesto](https://openjavaformat.dev/manifesto/).
 
@@ -160,6 +160,23 @@ The native image needs a GraalVM 25 behind `GRAALVM_HOME`. CI installs it with
 GraalVM has to come from outside Gradle: unpacking a JDK that Gradle downloaded itself does not
 preserve the symlink GraalVM ships at `bin/native-image`, and `nativeCompile` then fails on an empty,
 unexecutable file.
+
+### WebAssembly module
+
+The playground on openjavaformat.dev runs the formatter in the browser, compiled to WebAssembly by
+GraalVM's Web Image backend. Only the release workflow builds it, in its `wasm` job, and the zip goes
+on the GitHub release; `./gradlew build` leaves it out. Web Image ships in Oracle GraalVM only, so the
+module needs Oracle GraalVM 25 behind `GRAALVM_HOME`, Binaryen 119 or later (`wasm-opt`) on the
+`PATH`, and Node.js 24 or later for the tests:
+
+```bash
+./gradlew -Pwasm=true :open-java-format-wasm:wasmTest   # build, then test in Node against the runnable jar
+./gradlew -Pwasm=true :open-java-format-wasm:wasmDev    # a bare page next to the module, to try it
+jwebserver -d "$PWD/open-java-format-wasm/build/wasm-dev"
+```
+
+Without `-Pwasm=true` the subproject is not part of the build at all: it compiles against
+`org.graalvm.webimage.api`, a module of Oracle GraalVM that no other JDK has.
 
 ### Running CI locally
 
