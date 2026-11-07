@@ -324,10 +324,11 @@ final class PalantirJavaFormatConfigurableTest {
                 .isEqualTo(new StatusLine("Downloading embedded version 21.0.2…", Optional.empty()));
         assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.DownloadFailed("21.0.2", "connection refused")))
                 .isEqualTo(new StatusLine("Download failed: connection refused.", Optional.of("Retry")));
+        // Update to latest is always there: it fetches the plugin's own version, and does nothing if that is the one.
         assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.Current(installed)))
-                .isEqualTo(new StatusLine("Use embedded version 21.0.1", Optional.empty()));
+                .isEqualTo(new StatusLine("Use embedded version 21.0.1", Optional.of("Update to latest")));
         assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.Outdated(installed, "21.0.2")))
-                .isEqualTo(new StatusLine("Use embedded version 21.0.1.", Optional.of("Update to 21.0.2")));
+                .isEqualTo(new StatusLine("Use embedded version 21.0.1", Optional.of("Update to latest")));
         assertThat(PalantirJavaFormatConfigurable.statusLine(new Status.NoImageForPlatform()))
                 .satisfies(line -> {
                     assertThat(line.text()).startsWith("No native binary is published for ");

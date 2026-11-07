@@ -158,6 +158,26 @@ final class EmbeddedNativeImageTest {
     }
 
     @Test
+    void updatesToThePluginsVersion() throws Exception {
+        installByHand("21.0.0");
+        publish(BINARY, sha256(BINARY));
+
+        embedded.update(null, "21.0.1");
+
+        assertThat(embedded.installed()).map(Installed::version).hasValue("21.0.1");
+    }
+
+    @Test
+    void leavesTheBinaryOfThePluginsVersionAlone() throws Exception {
+        // Nothing is published, so a download would fail and say so.
+        var installed = installByHand("21.0.1");
+
+        embedded.update(null, "21.0.1");
+
+        assertThat(embedded.status("21.0.1")).isEqualTo(new Status.Current(installed));
+    }
+
+    @Test
     void reportsAFailedDownload() {
         embedded.download(null, "2b233feb");
 

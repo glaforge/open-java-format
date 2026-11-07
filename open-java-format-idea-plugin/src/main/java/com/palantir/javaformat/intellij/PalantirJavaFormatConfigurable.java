@@ -81,7 +81,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         this.useNativeImage = new JCheckBox("Use native binary");
         this.embeddedStatus = new JLabel();
         this.embeddedAction = new ActionLink();
-        embeddedAction.addActionListener(event -> embeddedNativeImage.download(project, pluginVersion()));
+        embeddedAction.addActionListener(event -> embeddedNativeImage.update(project, pluginVersion()));
         var pathField = new JBTextField();
         pathField.getEmptyText().setText("Leave empty to use the embedded version");
         // A fixed preferred width, which the form stretches: sized to a long path, it would widen the page instead.
@@ -222,7 +222,10 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
 
     record StatusLine(String text, Optional<String> action) {}
 
-    /** The line under Use native binary, and the link next to it, which downloads the plugin's version. */
+    /**
+     * The line under Use native binary, and the link next to it, which downloads the plugin's version unless that is
+     * the one installed.
+     */
     static StatusLine statusLine(Status status) {
         return switch (status) {
             case Status.NoImageForPlatform noImage ->
@@ -235,12 +238,13 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
                 new StatusLine("Downloading embedded version " + downloading.version() + "…", Optional.empty());
             case Status.DownloadFailed failed ->
                 new StatusLine("Download failed: " + failed.reason() + ".", Optional.of("Retry"));
+            // The latest is the plugin's own version, which formats as the formatter bundled with it does.
             case Status.Current current ->
-                new StatusLine("Use embedded version " + current.installed().version(), Optional.empty());
+                new StatusLine(
+                        "Use embedded version " + current.installed().version(), Optional.of("Update to latest"));
             case Status.Outdated outdated ->
                 new StatusLine(
-                        "Use embedded version " + outdated.installed().version() + ".",
-                        Optional.of("Update to " + outdated.available()));
+                        "Use embedded version " + outdated.installed().version(), Optional.of("Update to latest"));
         };
     }
 

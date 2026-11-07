@@ -169,6 +169,16 @@ final class EmbeddedNativeImage {
     }
 
     /**
+     * Downloads the binary of the given version unless it is the one installed: the settings page's Download, Retry and
+     * Update to latest, whose latest is the plugin's own version.
+     */
+    void update(@Nullable Project project, String version) {
+        if (!installed().map(Installed::version).equals(Optional.of(version))) {
+            download(project, version);
+        }
+    }
+
+    /**
      * Downloads the binary of the given version in the background, with the IDE's progress and cancel button. A
      * download already under way, from another project or from the notification, is the one that continues.
      */
