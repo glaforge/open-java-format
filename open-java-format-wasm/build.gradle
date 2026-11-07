@@ -1,0 +1,148 @@
+import org.graalvm.buildtools.gradle.tasks.BuildNativeImageTask
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'org.graalvm.buildtools:native-gradle-plugin:1.1.17'
+    }
+}
+
+apply plugin: 'org.graalvm.buildtools.native'
+
+description = 'open-java-format compiled to WebAssembly with GraalVM Web Image, for a web page'
+
+dependencies {
+    implementation project(':open-java-format')
+}
+
+// Web Image, `native-image --tool:svm-wasm`, ships in Oracle GraalVM and in no other JDK, and so does the API
+// WasmMain is written against: org.graalvm.webimage.api is a module of that JDK, not a Maven artifact. Gradle
+// reports Oracle GraalVM's vendor as Oracle, the same as Oracle's plain JDK; nativeImageCapable tells the two apart.
+// The jars this module depends on still compile for Java 21.
+def oracleGraalVm = { spec ->
+    spec.languageVersion.set(JavaLanguageVersion.of(25))
+    spec.vendor.set(JvmVendorSpec.ORACLE)
+    spec.nativeImageCapable.set(true)
+}
+
+java {
+    toolchain(oracleGraalVm)
+}
+
+def exports = [
+        'jdk.compiler/com.sun.tools.javac.file',
+        'jdk.compiler/com.sun.tools.javac.main',
+        'jdk.compiler/com.sun.tools.javac.parser',
+        'jdk.compiler/com.sun.tools.javac.tree',
+        'jdk.compiler/com.sun.tools.javac.util',
+        'jdk.compiler/com.sun.tools.javac.code',
+        'jdk.compiler/com.sun.tools.javac.api'
+]
+
+// Initialized while the image is built, and kept in it. Locations as in open-java-format-native. javac's message
+// bundles, and the diagnostic keys and lint categories made from them, end up in the image heap, where Web Image
+// accepts only build-time initialized objects. Trees looks javac's methods up as MethodHandles in its static
+// initializer: left to run time, that brings in Web Image's general MethodHandle support, and with it float and
+// double compare-and-set, which it fails to compile ("unhandled compare" in WasmGCSingleThreadedAtomicsPhase).
+// WasmMain$BuildVersion keeps the version passed below.
+def buildTimeInitialized = [
+        'com.sun.tools.javac.file.Locations',
+        'com.sun.tools.javac.resources',
+        'com.sun.tools.javac.util.JCDiagnostic$DiagnosticType',
+        'com.sun.tools.javac.util.JCDiagnostic$Error',
+        'com.sun.tools.javac.util.JCDiagnostic$Fragment',
+        'com.sun.tools.javac.util.JCDiagnostic$LintWarning',
+        'com.sun.tools.javac.code.Lint$LintCategory',
+        'com.palantir.javaformat.java.Trees',
+        'com.palantir.javaformat.java.WasmMain$BuildVersion',
+]
+
+graalvmNative {
+    // As in open-java-format-native: this project ships its own metadata.
+    metadataRepository {
+        enabled = false
+    }
+
+    binaries.named('main') {
+        it.javaLauncher.set(javaToolchains.launcherFor(oracleGraalVm))
+        // The wrapper is open-java-format.js, and it fetches open-java-format.js.wasm from next to itself.
+        it.imageName.set('open-java-format')
+        it.mainClass.set('com.palantir.javaformat.java.WasmMain')
+        it.sharedLibrary.set(false)
+        it.classpath.from(configurations.named('runtimeClasspath'))
+        it.configurationFileDirectories.from(
+                rootProject.file('open-java-format-native/src/main/resources/META-INF/native-image'))
+        it.buildArgs.addAll(
+                '--tool:svm-wasm',
+                '-H:+UnlockExperimentalVMOptions',
+                // The page starts the module itself, through GraalVM.run, so that it learns when the module is
+                // ready and when loading it failed. Started by the wrapper, a failure would only reach the console.
+                '-H:-AutoRunVM',
+                "--initialize-at-build-time=${buildTimeInitialized.join(',')}".toString(),
+                "-Dopen-java-format.version=${project.version}".toString(),
+                '-H:+ReportExceptionStackTraces')
+        it.jvmArgs.addAll(exports.collect { value -> "--add-exports=${value}=ALL-UNNAMED".toString() })
+    }
+}
+
+def nativeCompile = tasks.named('nativeCompile', BuildNativeImageTask)
+def moduleFiles = nativeCompile.flatMap { it.outputDirectory }.map { dir ->
+    fileTree(dir) { include 'open-java-format.js', 'open-java-format.js.wasm' }
+}
+def wrapper = nativeCompile.flatMap { it.outputDirectory }.map { it.file('open-java-format.js').asFile.path }
+
+// The tests run the module in Node, as a page would run it. node has to be on the PATH.
+def wasmSmokeTest = tasks.register('wasmSmokeTest', Exec) {
+    description = 'Formats the native image smoke test cases with the module, in Node.'
+    group = 'verification'
+    dependsOn nativeCompile
+    executable 'node'
+    args file('src/test/js/smoke.mjs')
+    argumentProviders.add({ [wrapper.get(), project.version.toString()] } as CommandLineArgumentProvider)
+}
+
+def allJar = project(':open-java-format').tasks.named('allJar', Jar)
+def java21 = javaToolchains.launcherFor { it.languageVersion.set(JavaLanguageVersion.of(21)) }
+
+def wasmDifferentialTest = tasks.register('wasmDifferentialTest', Exec) {
+    description = 'Formats every test case input with the module and with the runnable jar, and compares.'
+    group = 'verification'
+    dependsOn nativeCompile, allJar
+    executable 'node'
+    args file('src/test/js/differential.mjs')
+    argumentProviders.add({
+        [
+                wrapper.get(),
+                java21.get().executablePath.asFile.path,
+                allJar.get().archiveFile.get().asFile.path,
+                project(':open-java-format').file('src/test/resources/test-cases').path,
+                layout.buildDirectory.dir('wasm-differential').get().asFile.path,
+        ]
+    } as CommandLineArgumentProvider)
+}
+
+tasks.register('wasmTest') {
+    description = 'Runs the module\'s smoke and differential tests in Node.'
+    group = 'verification'
+    dependsOn wasmSmokeTest, wasmDifferentialTest
+}
+
+// The GitHub release's open-java-format-wasm-<version>.zip: the wrapper and the module, as native-image names them,
+// since the wrapper fetches the module by its own name plus .wasm. Not the .wat that native-image writes next to them.
+tasks.register('wasmZip', Zip) {
+    description = 'Packs the module and its wrapper for the GitHub release.'
+    group = 'distribution'
+    from(moduleFiles)
+}
+
+// `jwebserver -d open-java-format-wasm/build/wasm-dev` serves the bare dev page next to the module.
+tasks.register('wasmDev', Sync) {
+    description = 'Puts the dev page next to the module, for trying it in a browser.'
+    group = 'build'
+    from(moduleFiles)
+    from('src/dev')
+    into(layout.buildDirectory.dir('wasm-dev'))
+}

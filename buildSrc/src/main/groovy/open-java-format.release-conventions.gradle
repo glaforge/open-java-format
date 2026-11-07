@@ -13,8 +13,9 @@ plugins {
 //
 // `-PreleaseTarget=github` deploys nothing. It is for `jreleaserRelease`, which opens a draft GitHub
 // release on the tag with what Maven Central does not carry — the runnable formatter jar, the Gradle
-// plugins' jar, the IntelliJ plugin zip, the Eclipse plugin jar and every platform's native binary as a
-// plain download — each file signed, plus a checksum file.
+// plugins' jar, the IntelliJ plugin zip, the Eclipse plugin jar, every platform's native binary as a
+// plain download and the WebAssembly module for openjavaformat.dev's playground — each file signed, plus a
+// checksum file.
 //
 // Publishing is a run of its own: with JRELEASER_MAVENCENTRAL_DEPLOYMENT_ID set, JReleaser publishes that
 // deployment, which an earlier run uploaded and the Portal validated, and nothing is built. The ID has to
@@ -46,8 +47,9 @@ def stagingRepositories = releasedProjects.collect { path ->
 }
 
 // The GitHub release takes the binaries the per-platform jobs collected from -PnativeImages=<dir>, exactly
-// as the native deployment does.
+// as the native deployment does, and the WebAssembly module's zip that the wasm job built from -PwasmModule=<dir>.
 def nativeBinaries = []
+def wasmModules = []
 if (releaseTarget == 'github') {
     def collectedNativeImages = providers.gradleProperty('nativeImages').getOrNull()
     if (collectedNativeImages == null) {
@@ -59,6 +61,17 @@ if (releaseTarget == 'github') {
     }.files.sort { it.name }
     if (nativeBinaries.isEmpty()) {
         throw new GradleException("No native images to release in ${collectedNativeImages}")
+    }
+
+    def collectedWasmModule = providers.gradleProperty('wasmModule').getOrNull()
+    if (collectedWasmModule == null) {
+        throw new GradleException('-PreleaseTarget=github needs -PwasmModule=<dir> holding open-java-format-wasm-<version>.zip')
+    }
+    wasmModules = fileTree(file(collectedWasmModule)) {
+        include 'open-java-format-wasm-*.zip'
+    }.files.sort { it.name }
+    if (wasmModules.size() != 1) {
+        throw new GradleException("Expected one open-java-format-wasm-<version>.zip in ${collectedWasmModule}, found ${wasmModules.size()}")
     }
 }
 
@@ -103,9 +116,9 @@ jreleaser {
     // Name templates, not Gradle's version: the root project sets its version only after applying this
     // plugin. The jars and the zip are built by the tasks jreleaserRelease depends on below.
     files {
-        nativeBinaries.each { binary ->
+        (nativeBinaries + wasmModules).each { file ->
             artifact {
-                path = binary.absolutePath
+                path = file.absolutePath
             }
         }
         if (releaseTarget == 'github') {

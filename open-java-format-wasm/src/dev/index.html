@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  A bare page for trying the module by hand, served next to it: see the README. Not released; the playground on
+  openjavaformat.dev is the real page.
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>open-java-format on WebAssembly</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 1rem; }
+        main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        textarea { width: 100%; height: 70vh; font-family: ui-monospace, monospace; font-size: 13px; }
+    </style>
+</head>
+<body>
+<p><button id="format" disabled>Format</button> <span id="status">Loading…</span></p>
+<main>
+    <textarea id="source" spellcheck="false">class A{int x;}</textarea>
+    <textarea id="output" spellcheck="false" readonly></textarea>
+</main>
+<script src="open-java-format.js"></script>
+<script>
+    const status = document.getElementById("status");
+    const button = document.getElementById("format");
+    const started = performance.now();
+    GraalVM.run([], new GraalVM.Config()).then(() => {
+        status.textContent = `${openJavaFormat.version}, started in ${Math.round(performance.now() - started)} ms`;
+        button.disabled = false;
+    }, error => {
+        status.textContent = `Failed to start: ${error}`;
+    });
+    button.addEventListener("click", () => {
+        const before = performance.now();
+        const result = openJavaFormat.format(document.getElementById("source").value);
+        const millis = (performance.now() - before).toFixed(1);
+        document.getElementById("output").value = result.ok ? result.output : result.error;
+        status.textContent = `${openJavaFormat.version}: ${result.ok ? "formatted" : "error"} in ${millis} ms`;
+    });
+</script>
+</body>
+</html>
