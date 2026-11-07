@@ -44,6 +44,7 @@ import java.util.Optional;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JTextArea;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -209,6 +210,35 @@ final class PalantirJavaFormatConfigurableTest {
     }
 
     @Test
+    void wrapsTheFormatterTypeAndLetsItsPathBeCopied() throws Throwable {
+        // The embedded binary lives deep in the IDE's system directory: on one line its path made the page wider than
+        // the dialog, and a label would not let anyone copy it. A long path of one's own in Binary must not either.
+        var path = Path.of("/Users/someone/Library/Caches/JetBrains/IntelliJIdea2026.2/open-java-format/native/"
+                + "21.0.1/".repeat(40) + "open-java-format-macos_aarch64");
+        settings.setUseNativeImage(true);
+        settings.setNativeImagePath(Optional.of(path));
+
+        EdtTestUtil.runInEdtAndWait(() -> {
+            configurable.reset();
+
+            var formatterType = findAll(component, JTextArea.class).stream()
+                    .filter(text -> text.getText().contains(path.toString()))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(formatterType.isEditable()).isFalse();
+            assertThat(formatterType.getLineWrap()).isTrue();
+            assertThat(component.getPreferredSize().width).isLessThan(1000);
+
+            // Laid out at a dialog's width, the path takes several lines rather than one cut off.
+            component.setSize(600, 800);
+            layOut(component);
+            layOut(component);
+            var line = formatterType.getFontMetrics(formatterType.getFont()).getHeight();
+            assertThat(formatterType.getHeight()).isGreaterThan(2 * line);
+        });
+    }
+
+    @Test
     void describesEveryStateOfTheEmbeddedBinary() {
         var installed = new Installed("21.0.1", Path.of("/system/open-java-format/native/21.0.1/open-java-format"));
 
@@ -250,6 +280,13 @@ final class PalantirJavaFormatConfigurableTest {
         var binary = Files.writeString(dir.resolve(name), "#!/bin/sh\n");
         assertThat(binary.toFile().setExecutable(true)).isTrue();
         return binary;
+    }
+
+    private static void layOut(Component root) {
+        if (root instanceof Container container) {
+            container.doLayout();
+            Arrays.stream(container.getComponents()).forEach(PalantirJavaFormatConfigurableTest::layOut);
+        }
     }
 
     private static <T extends Component> List<T> findAll(Component root, Class<T> type) {

@@ -76,8 +76,8 @@ final class FormatterSelectionTest {
 
     @Test
     void describesWhatRunsForTheSettingsPage() {
-        assertThat(new NativeImage(CUSTOM, false).describe()).isEqualTo("Native binary, custom (" + CUSTOM + ")");
-        assertThat(new NativeImage(EMBEDDED, true).describe()).isEqualTo("Native binary, embedded (" + EMBEDDED + ")");
+        assertThat(new NativeImage(CUSTOM, false).describe()).isEqualTo("Native binary, custom: " + CUSTOM);
+        assertThat(new NativeImage(EMBEDDED, true).describe()).isEqualTo("Native binary, embedded: " + EMBEDDED);
         assertThat(new JavaBased(false).describe()).isEqualTo("Java-based formatter");
         assertThat(new JavaBased(true).describe())
                 .isEqualTo("Java-based formatter: the native binary is not downloaded");

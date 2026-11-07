@@ -44,7 +44,7 @@ sealed interface FormatterSelection {
     record NativeImage(Path path, boolean embedded) implements FormatterSelection {
         @Override
         public String describe() {
-            return "Native binary, " + (embedded ? "embedded" : "custom") + " (" + path + ")";
+            return "Native binary, " + (embedded ? "embedded" : "custom") + ": " + path;
         }
     }
 

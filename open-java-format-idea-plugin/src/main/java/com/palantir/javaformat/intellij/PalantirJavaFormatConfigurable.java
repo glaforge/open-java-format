@@ -26,12 +26,16 @@ import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.ActionLink;
+import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.palantir.javaformat.intellij.EmbeddedNativeImage.Status;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.EnabledState;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -42,6 +46,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,7 +61,7 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
     private final JLabel embeddedStatus;
     private final ActionLink embeddedAction;
     private final TextFieldWithBrowseButton nativeImagePath;
-    private final JLabel formatterType;
+    private final JTextArea formatterType;
     private final JLabel formatterVersion;
     private final JLabel pluginVersion;
 
@@ -78,12 +83,14 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         embeddedAction.addActionListener(event -> embeddedNativeImage.download(project, pluginVersion()));
         var pathField = new JBTextField();
         pathField.getEmptyText().setText("Leave empty to use the embedded version");
+        // A fixed preferred width, which the form stretches: sized to a long path, it would widen the page instead.
+        pathField.setColumns(30);
         this.nativeImagePath = new TextFieldWithBrowseButton(pathField);
         nativeImagePath.addBrowseFolderListener(new TextBrowseFolderListener(
                 FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor().withTitle("Native Binary"), project));
         this.pluginVersion = new JLabel();
         this.formatterVersion = new JLabel();
-        this.formatterType = new JLabel();
+        this.formatterType = selectableText();
 
         var statusRow = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
         statusRow.add(embeddedStatus);
@@ -105,8 +112,9 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
                 .addComponent(nativeImageOptions)
                 .addLabeledComponent("Plugin version", pluginVersion)
                 .addLabeledComponent("Implementation version", formatterVersion)
-                .addLabeledComponent("Formatter type", formatterType)
-                .addComponentFillVertically(new JPanel(), 0)
+                // Last, and filling the rest of the page: only then does the form put the label at the text's first
+                // line rather than in the middle of a wrapped path.
+                .addLabeledComponentFillVertically("Formatter type", formatterType)
                 .getPanel();
     }
 
@@ -255,6 +263,37 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         } catch (InvalidPathException e) {
             throw new ConfigurationException(text + " is not a path: " + e.getReason());
         }
+    }
+
+    /**
+     * Read-only text that wraps at the page's width and can be selected and copied: the formatter type names the
+     * binary that runs, and the embedded one's path, deep in the IDE's system directory, would otherwise widen the
+     * page past the dialog.
+     */
+    private static JTextArea selectableText() {
+        var text = new JBTextArea() {
+            @Override
+            public Dimension getPreferredSize() {
+                // No wider than a short line: the form stretches it to the page, and once it has that width, the
+                // height is that of its lines wrapped to it.
+                var preferred = super.getPreferredSize();
+                return new Dimension(Math.min(preferred.width, JBUI.scale(200)), preferred.height);
+            }
+        };
+        // The height depends on the width the layout gives, which is known only after the layout.
+        text.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent event) {
+                text.revalidate();
+            }
+        });
+        text.setEditable(false);
+        text.setLineWrap(true);
+        text.setWrapStyleWord(true);
+        text.setOpaque(false);
+        text.setBorder(JBUI.Borders.empty());
+        text.setFont(JBUI.Fonts.label());
+        return text;
     }
 
     private static String getFormatterVersionText(PalantirJavaFormatSettings settings) {
