@@ -25,16 +25,26 @@ import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.ValueSource;
 
 // Apart from PalantirJavaFormatIdeaPluginTest, which needs the native image and so runs in CI's native jobs only.
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class RequiredIdeaPluginTest {
+
+    @Parameter
+    private boolean configurationCache;
 
     @TempDir
     private Path projectDir;
 
     @Test
     void lists_the_idea_plugin_as_required_when_intellij_syncs() {
-        GradleTestProject project = new GradleTestProject(projectDir).plugins("dev.openjavaformat.java-format-idea");
+        GradleTestProject project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
+                .plugins("dev.openjavaformat.java-format-idea");
 
         project.succeeds("help");
 

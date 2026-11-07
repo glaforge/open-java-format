@@ -24,12 +24,17 @@ import java.nio.file.Path;
 import org.gradle.testkit.runner.BuildResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * A build without the JVM flags used to fail on the first file with a raw IllegalAccessError from the formatter's
  * internals (#19). It fails before the first file now, naming the two settings that make the formatter run. This
  * class runs in the default test task; PalantirJavaFormatPluginTest does not, because it needs the native binary.
  */
+@ParameterizedClass(name = "configuration cache {0}")
+@ValueSource(booleans = {true, false})
 final class FormatDiffWithoutJavacExportsTest {
 
     /** ./gradlew writeImplClasspath generates this file. Forward slashes: the path goes into a Groovy string. */
@@ -38,6 +43,9 @@ final class FormatDiffWithoutJavacExportsTest {
 
     private static final String MAIN_JAVA = "src/main/java/Main.java";
 
+    @Parameter
+    private boolean configurationCache;
+
     @TempDir
     private Path projectDir;
 
@@ -45,14 +53,13 @@ final class FormatDiffWithoutJavacExportsTest {
     void formatDiff_names_both_settings_when_the_gradle_jvm_does_not_export_javac()
             throws IOException, InterruptedException {
         GradleTestProject project = new GradleTestProject(projectDir)
+                .configurationCache(configurationCache)
                 .plugins("java", "dev.openjavaformat.java-format")
-                .buildGradle(
-                        """
-                        dependencies {
-                            palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                        }
-                        """,
-                        CLASSPATH_FILE);
+                .buildGradle("""
+                    dependencies {
+                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
+                    }
+                    """, CLASSPATH_FILE);
 
         git(project, "init");
         git(project, "config", "user.name", "Foo");

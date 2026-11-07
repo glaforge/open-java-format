@@ -11,7 +11,8 @@ name: Release
 # Once Maven Central serves both, the Gradle plugins go to the Gradle Plugin Portal, signed with the same
 # release key, and the IntelliJ plugin goes to the JetBrains Marketplace, verified against the IDEs it
 # supports first. After publishing, a draft GitHub release on the tag collects the runnable jar, the Gradle
-# and IDE plugins and the native binaries.
+# and IDE plugins, the native binaries and the WebAssembly module, which a job of its own builds on Oracle
+# GraalVM.
 #
 # Needs seven repository secrets: JRELEASER_MAVENCENTRAL_USERNAME and JRELEASER_MAVENCENTRAL_PASSWORD (the
 # Central Portal user token), JRELEASER_GPG_SECRET_KEY and JRELEASER_GPG_PASSPHRASE, GRADLE_PUBLISH_KEY and
@@ -194,6 +195,71 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # The formatter as a WebAssembly module, for the playground on openjavaformat.dev. Built on Oracle GraalVM, the
+  # only distribution with the Web Image backend (native-image --tool:svm-wasm), and tested in Node against the
+  # runnable jar of the same tag. Maven Central does not carry it, so only the draft GitHub release waits for it: a
+  # failure here holds back nothing else, and "Re-run failed jobs" builds it again and then opens the draft.
+  wasm:
+    name: wasm
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The jars, and the runnable jar the module is compared with, compile with Java 21 through JDK21_HOME, as in
+      # native-images. Installed before GraalVM, so that Gradle still runs on GraalVM.
+      - name: Install JDK 21 for the jars
+        id: jdk21
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Pinned to the patch: Web Image is experimental, and its options and output change between releases.
+      - name: Install Oracle GraalVM 25 for the module
+        uses: graalvm/setup-graalvm@f70bc8032f90a104502824a54bcb94b6f01715bc # v1.6.8
+        with:
+          java-version: '25.0.4'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Web Image runs wasm-opt from the PATH, and needs Binaryen 119 or later; Ubuntu's package is older.
+      - name: Install Binaryen
+        env:
+          BINARYEN_VERSION: version_133
+          BINARYEN_SHA256: 2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
+        run: |
+          archive="binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz"
+          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/WebAssembly/binaryen/releases/download/${BINARYEN_VERSION}/${archive}"
+          echo "${BINARYEN_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check
+          tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}"
+          echo "${RUNNER_TEMP}/binaryen-${BINARYEN_VERSION}/bin" >> "$GITHUB_PATH"
+
+      # The tests run the module as a page does, and Node 24 has the WebAssembly GC and exception handling it needs.
+      # No cache: the tests install no packages, and a release must not restore one another run could have written.
+      - name: Install Node.js 24 for the tests
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      # wasmTest: the native image's smoke test, then every test case's input against the runnable jar.
+      - name: Build and test the module
+        run: ./gradlew -Pwasm=true :open-java-format-wasm:wasmTest :open-java-format-wasm:wasmZip
+        env:
+          JDK21_HOME: ${{ steps.jdk21.outputs.path }}
+
+      - name: Hand the module to the GitHub release
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wasm-module
+          path: open-java-format-wasm/build/distributions/open-java-format-wasm-*.zip
+          if-no-files-found: error
+          retention-days: 1
+
   # Both deployments are uploaded and validated by now. Publishing one is a JReleaser run given its ID,
   # which builds nothing. One leg per deployment, so that a re-run repeats only the leg that failed.
   publish:
@@ -318,13 +384,13 @@ jobs:
           JETBRAINS_MARKETPLACE_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
 
   # What Maven Central does not carry — the runnable formatter jar, the Gradle plugins' jar, the IntelliJ
-  # plugin zip, the Eclipse plugin jar, and every platform's native binary as a plain download — goes into
-  # a draft GitHub release on the tag, each file signed with the release key. Only once both deployments
-  # are published; publishing the draft is a click on GitHub, and a re-run fails while a release for the
-  # tag exists.
+  # plugin zip, the Eclipse plugin jar, every platform's native binary as a plain download, and the
+  # WebAssembly module — goes into a draft GitHub release on the tag, each file signed with the release key.
+  # Only once both deployments are published and the module is built; publishing the draft is a click on
+  # GitHub, and a re-run fails while a release for the tag exists.
   github-release:
     name: draft GitHub release
-    needs: publish
+    needs: [publish, wasm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -347,8 +413,14 @@ jobs:
           pattern: native-image-*
           merge-multiple: true
 
+      - name: Collect the WebAssembly module
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wasm-module
+          path: wasm-module
+
       - name: Build the plugins and open the draft release
-        run: ./gradlew -PreleaseTarget=github -PnativeImages=native-images jreleaserRelease
+        run: ./gradlew -PreleaseTarget=github -PnativeImages=native-images -PwasmModule=wasm-module jreleaserRelease
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GPG_SECRET_KEY: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}

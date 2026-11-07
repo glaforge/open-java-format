@@ -9,6 +9,12 @@ include ':open-java-format-jdk-bootstrap'
 include ':open-java-format-benchmarks'
 include ':open-java-format-native'
 
+// The WebAssembly module compiles against Oracle GraalVM, which nobody who only wants the jars has, so it is part of
+// the build only with -Pwasm=true. The release workflow builds it that way; nothing else does.
+if (Boolean.parseBoolean(providers.gradleProperty('wasm').getOrElse('false'))) {
+    include ':open-java-format-wasm'
+}
+
 boolean isCiServer = System.getenv().containsKey('CI')
 buildCache {
     local {
