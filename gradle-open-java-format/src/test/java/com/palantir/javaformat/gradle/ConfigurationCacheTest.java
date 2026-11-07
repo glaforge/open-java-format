@@ -105,9 +105,14 @@ final class ConfigurationCacheTest {
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
                 .writeFile("formatter.classpath", jars)
+                // By default Spotless checks for the platform's line endings, CRLF on Windows; PRESERVE keeps the
+                // file's own.
                 .buildGradle("""
                     dependencies {
                         palantirJavaFormat files(file("formatter.classpath").text.split(File.pathSeparator))
+                    }
+                    spotless {
+                        lineEndings = 'PRESERVE'
                     }
                     """)
                 .writeFile(MAIN_JAVA, FORMATTED);
