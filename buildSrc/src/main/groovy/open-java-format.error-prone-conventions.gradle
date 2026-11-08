@@ -11,6 +11,7 @@ dependencies {
 }
 
 nullaway {
+    severity = net.ltgt.gradle.errorprone.CheckSeverity.ERROR
     annotatedPackages.add('com.palantir')
     jspecifyMode = true
 }
