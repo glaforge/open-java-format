@@ -150,7 +150,8 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
                     request.onTextReady(formattedText);
                 }
             } catch (FormatterException e) {
-                logger.error(
+                // A syntax error in the file, not a fault of the plugin: an error would go to its error reports.
+                logger.warn(
                         String.format(
                                 "Failed to format file %s",
                                 request.getContext().getContainingFile().getName()),
@@ -163,8 +164,9 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
                 throw e;
             } catch (RuntimeException e) {
                 // Typically the formatter's JVM failing to start or exiting with an error. Left alone, the IDE
-                // swallows it and Reformat looks as if it did nothing.
-                logger.warn("open-java-format could not run the formatter", e);
+                // swallows it and Reformat looks as if it did nothing. An error rather than a warning, so that it goes
+                // to the plugin's error reports on the JetBrains Marketplace (see errorHandler in plugin.xml).
+                logger.error("open-java-format could not run the formatter", e);
                 request.onError(
                         Notifications.GENERIC_ERROR_NOTIFICATION_GROUP,
                         Notifications.formatterFailedMessage(
