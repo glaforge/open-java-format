@@ -43,6 +43,15 @@ final class SpotlessExcludesTest {
         public class Test { Void test() { return null; } }
         """;
 
+    /**
+     * Formatted next to a file in an excluded directory. If it stays as it is, the formatter did not run, and the
+     * excluded file staying as it is proves nothing.
+     */
+    private static final String MAIN_JAVA = "src/main/java/Main.java";
+
+    private static final String UNFORMATTED_MAIN = "class Main {\n        int x;\n}\n";
+    private static final String FORMATTED_MAIN = "class Main {\n    int x;\n}\n";
+
     @Parameter
     private boolean configurationCache;
 
@@ -81,12 +90,17 @@ final class SpotlessExcludesTest {
                     java { srcDir '%s' }
                 }
             }
-            """, srcDir).writeFile(srcDir + "/test/Test.java", SOURCE_FILE);
+            """, srcDir)
+                .writeFile(srcDir + "/test/Test.java", SOURCE_FILE)
+                .writeFile(MAIN_JAVA, UNFORMATTED_MAIN);
 
-        BuildResult result = project.succeeds("spotlessJavaCheck");
+        BuildResult result = project.succeeds("spotlessApply");
 
         assertThat(result.task(":spotlessJava")).isNotNull().extracting(task -> task.getOutcome())
                 .isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(srcDir + "/test/Test.java")).isEqualTo(SOURCE_FILE);
+        // Spotless writes the platform's line endings, CRLF on Windows.
+        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED_MAIN);
     }
 
     @ParameterizedTest
@@ -108,5 +122,10 @@ final class SpotlessExcludesTest {
 
         assertThat(result.task(":spotlessJava")).isNotNull().extracting(task -> task.getOutcome())
                 .isEqualTo(TaskOutcome.SUCCESS);
+        // A formatter that fails reports a lint error instead, which fails the check just as well.
+        assertThat(result.getOutput())
+                .contains("format violations")
+                .contains("Test.java")
+                .doesNotContain("lint error");
     }
 }

@@ -104,22 +104,20 @@ final class ConfigurationCacheTest {
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
                 .writeFile("formatter.classpath", jars)
-                // By default Spotless checks for the platform's line endings, CRLF on Windows; PRESERVE keeps the
-                // file's own.
                 .buildGradle("""
                     dependencies {
                         palantirJavaFormat files(file("formatter.classpath").text.split(File.pathSeparator))
                     }
-                    spotless {
-                        lineEndings = 'PRESERVE'
-                    }
-                    """)
-                .writeFile(MAIN_JAVA, FORMATTED);
+                    """);
 
-        assertThat(spotlessJava(project.succeeds("spotlessCheck"))).isEqualTo(TaskOutcome.SUCCESS);
-        var unchanged = project.succeeds("spotlessCheck");
+        // spotlessApply of the same source each time, and the file it leaves: a step that changes nothing is up to
+        // date just as well, and passes a spotlessCheck of a formatted file.
+        assertThat(spotlessJava(spotlessApply(project))).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        var unchanged = spotlessApply(project);
         assertThat(unchanged.getOutput()).contains(REUSED);
         assertThat(spotlessJava(unchanged)).isEqualTo(TaskOutcome.UP_TO_DATE);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
 
         // Spotless signs the jars by name, size and content, as another formatter version changes them. The extra jar
         // is JUnit's, not one written into projectDir: the daemon keeps the formatter's jars open after the build, and
@@ -128,7 +126,13 @@ final class ConfigurationCacheTest {
                 Test.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         project.writeFile("formatter.classpath", jars + File.pathSeparator + extraJar);
 
-        assertThat(spotlessJava(project.succeeds("spotlessCheck"))).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(spotlessJava(spotlessApply(project))).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+    }
+
+    /** spotlessApply of the unformatted source, written again: only its time changes. */
+    private static BuildResult spotlessApply(GradleTestProject project) {
+        return project.writeFile(MAIN_JAVA, UNFORMATTED).succeeds("spotlessApply");
     }
 
     @Test
