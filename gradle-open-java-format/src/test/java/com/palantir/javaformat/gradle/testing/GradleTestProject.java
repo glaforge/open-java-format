@@ -60,6 +60,8 @@ public final class GradleTestProject {
 
     private final Path projectDir;
     private final Set<String> plugins = new LinkedHashSet<>();
+    private final Set<String> pluginsNotApplied = new LinkedHashSet<>();
+    private final Set<String> subprojects = new LinkedHashSet<>();
     private final StringBuilder buildGradle = new StringBuilder();
     private final StringBuilder gradleProperties = new StringBuilder();
     private boolean configurationCache = true;
@@ -76,6 +78,21 @@ public final class GradleTestProject {
 
     public GradleTestProject plugins(String... ids) {
         plugins.addAll(Arrays.asList(ids));
+        return this;
+    }
+
+    /**
+     * Declares these plugins in the plugins block with {@code apply false}, as a multi-project build does: on the build's
+     * classpath, for the subprojects to apply.
+     */
+    public GradleTestProject pluginsNotApplied(String... ids) {
+        pluginsNotApplied.addAll(Arrays.asList(ids));
+        return this;
+    }
+
+    /** Includes these subprojects, in directories of their names. A test writes their files with {@link #writeFile}. */
+    public GradleTestProject subprojects(String... names) {
+        subprojects.addAll(Arrays.asList(names));
         return this;
     }
 
@@ -216,9 +233,11 @@ public final class GradleTestProject {
     private void write() {
         StringBuilder script = new StringBuilder("plugins {\n");
         plugins.forEach(id -> script.append("    id '").append(id).append("'\n"));
+        pluginsNotApplied.forEach(id -> script.append("    id '").append(id).append("' apply false\n"));
         script.append("}\n\nrepositories {\n    mavenCentral()\n}\n\n").append(buildGradle);
 
         StringBuilder settings = new StringBuilder("rootProject.name = 'test-project'\n");
+        subprojects.forEach(name -> settings.append("include '").append(name).append("'\n"));
         // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
         buildCacheDir.ifPresent(dir -> settings.append("\nbuildCache {\n    local {\n        directory = file('")
                 .append(dir.toAbsolutePath().toString().replace('\\', '/'))
