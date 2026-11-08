@@ -96,13 +96,14 @@ final class JavaCommentsHelperTest {
         assertThat(rewritten).contains("/// " + url);
     }
 
+    @SuppressWarnings("FormatStringConcatenation") // Written out like the input, not as a template
     @Test
     void theMissingSpaceRuleAppliesToEveryLineOfTheRun() throws Exception {
         // Otherwise the same source formats differently depending on whether the running JDK hands the run
         // over as one tok (23 and later) or as one tok per line.
         String rewritten = rewrite("///Summary line.\n" + " ".repeat(COLUMN) + "///More text.", Style.OJF);
 
-        assertThat(rewritten).isEqualTo("/// Summary line.\n%s/// More text.", " ".repeat(COLUMN));
+        assertThat(rewritten).isEqualTo("/// Summary line.\n" + " ".repeat(COLUMN) + "/// More text.");
     }
 
     @Test
