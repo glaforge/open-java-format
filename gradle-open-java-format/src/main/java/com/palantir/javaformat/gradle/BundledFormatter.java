@@ -64,6 +64,12 @@ public final class BundledFormatter {
         return jars(gradleUserHome.toPath(), BundledFormatter.class.getClassLoader());
     }
 
+    /** Whether the jars are all there under this Gradle user home, so that {@link #jars} would not extract them. */
+    public static boolean isExtracted(File gradleUserHome) {
+        var plugin = BundledFormatter.class.getClassLoader();
+        return isComplete(gradleUserHome.toPath().resolve(CACHES).resolve(hash(plugin)), list(plugin));
+    }
+
     /**
      * The jars a build declared in palantirJavaFormat, which override the formatter inside the plugin; or, when it
      * declared none, as most builds do, the plugin's own.
@@ -77,16 +83,20 @@ public final class BundledFormatter {
     }
 
     static List<File> jars(Path gradleUserHome, ClassLoader plugin) {
-        var list = new String(resource(plugin, LIST), StandardCharsets.UTF_8)
-                .lines()
-                .map(Jar::parse)
-                .toList();
+        var list = list(plugin);
         var caches = gradleUserHome.resolve(CACHES);
         var target = caches.resolve(hash(plugin));
         if (!isComplete(target, list)) {
             extract(plugin, list, caches, target);
         }
         return list.stream().map(jar -> target.resolve(jar.name()).toFile()).toList();
+    }
+
+    private static List<Jar> list(ClassLoader plugin) {
+        return new String(resource(plugin, LIST), StandardCharsets.UTF_8)
+                .lines()
+                .map(Jar::parse)
+                .toList();
     }
 
     private static boolean isComplete(Path dir, List<Jar> list) {
