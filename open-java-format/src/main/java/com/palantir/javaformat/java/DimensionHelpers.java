@@ -102,22 +102,18 @@ class DimensionHelpers {
      * <p>Given {@code int @A @B [][] @C []}, adds {@code [[@A, @B], [@C]]} to dims and returns {@code int}.
      */
     private static Tree extractDims(Deque<List<AnnotationTree>> dims, Tree node) {
-        switch (node.getKind()) {
-            case ARRAY_TYPE -> {
-                return extractDims(dims, ((ArrayTypeTree) node).getType());
-            }
+        return switch (node.getKind()) {
+            case ARRAY_TYPE -> extractDims(dims, ((ArrayTypeTree) node).getType());
             case ANNOTATED_TYPE -> {
                 AnnotatedTypeTree annotatedTypeTree = (AnnotatedTypeTree) node;
                 if (!(annotatedTypeTree.getUnderlyingType() instanceof ArrayTypeTree)) {
-                    return node;
+                    yield node;
                 }
                 node = extractDims(dims, annotatedTypeTree.getUnderlyingType());
                 dims.addFirst(ImmutableList.copyOf(annotatedTypeTree.getAnnotations()));
-                return node;
+                yield node;
             }
-            default -> {
-                return node;
-            }
-        }
+            default -> node;
+        };
     }
 }
