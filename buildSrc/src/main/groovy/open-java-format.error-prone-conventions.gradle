@@ -12,9 +12,12 @@ dependencies {
 
 nullaway {
     annotatedPackages.add('com.palantir')
+    jspecifyMode = true
 }
 
 tasks.withType(JavaCompile).configureEach {
+    // JSpecify mode reads @Nullable on types from class files, which javac 21 does only with this flag.
+    options.compilerArgs.add('-XDaddTypeAnnotationsToSymbol=true')
     options.errorprone {
         // Annotation processor output (Immutables) is not ours to fix.
         excludedPaths = '.*/build/generated/.*'
