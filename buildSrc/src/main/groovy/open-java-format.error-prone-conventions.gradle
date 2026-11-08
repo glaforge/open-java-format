@@ -31,7 +31,10 @@ tasks.withType(JavaCompile).configureEach {
         error('RefactorSwitch')
         error('SameNameButDifferent')
         error('UnusedVariable')
+        disable('IsInstanceLambdaUsage')
+        disable('LexicographicalAnnotationAttributeListing')
         disable('LexicographicalAnnotationListing')
+        disable('StringJoining')
     }
 }
 
