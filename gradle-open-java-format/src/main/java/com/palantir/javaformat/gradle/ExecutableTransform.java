@@ -31,8 +31,6 @@ import org.gradle.api.artifacts.transform.TransformAction;
 import org.gradle.api.artifacts.transform.TransformOutputs;
 import org.gradle.api.artifacts.transform.TransformParameters;
 import org.gradle.api.file.FileSystemLocation;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -46,8 +44,6 @@ import org.gradle.work.DisableCachingByDefault;
 @DisableCachingByDefault(
         because = "Only copies one file and sets its executable bit; caching would cost more than it saves")
 public abstract class ExecutableTransform implements TransformAction<TransformParameters.None> {
-
-    private static Logger logger = Logging.getLogger(ExecutableTransform.class);
 
     @InputArtifact
     @PathSensitive(PathSensitivity.NAME_ONLY)

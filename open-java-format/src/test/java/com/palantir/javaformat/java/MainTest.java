@@ -483,7 +483,6 @@ final class MainTest {
         Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
         Process process = formatterMain("-").redirectInput(path.toFile()).start();
         process.waitFor();
-        String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
         String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
         assertThat(out).isEqualTo("<stdin>" + System.lineSeparator());
         assertThat(process.exitValue()).isEqualTo(1);
@@ -495,7 +494,6 @@ final class MainTest {
         Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
         Process process = formatterMain(path.toAbsolutePath().toString()).start();
         process.waitFor();
-        String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
         String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
         assertThat(out).isEqualTo(path.toAbsolutePath().toString() + System.lineSeparator());
         assertThat(process.exitValue()).isEqualTo(1);

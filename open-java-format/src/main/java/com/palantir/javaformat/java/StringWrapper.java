@@ -448,7 +448,6 @@ public final class StringWrapper {
                 int startLine = lineMap.getLineNumber(startingPos);
                 int lineStartPosition = lineMap.getStartPosition(startLine);
                 int endPos = getEndPosition(unit, expression);
-                int endLine = lineMap.getLineNumber(endPos);
                 int parentLine = shouldUseStartLineParent ? startParentLine : endParentLine;
                 // ignore indentation if the current argument is on the same line as the parent
                 if (startLine == parentLine) {
