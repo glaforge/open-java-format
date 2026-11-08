@@ -16,11 +16,12 @@
 
 package com.palantir.javaformat.gradle.testing;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -164,7 +165,7 @@ public final class GradleTestProject {
         Path target = file(relativePath);
         try {
             Files.createDirectories(target.getParent());
-            Files.writeString(target, content, StandardCharsets.UTF_8);
+            Files.writeString(target, content, UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not write " + relativePath, e);
         }
@@ -189,7 +190,7 @@ public final class GradleTestProject {
 
     public String readFile(String relativePath) {
         try {
-            return Files.readString(file(relativePath), StandardCharsets.UTF_8);
+            return Files.readString(file(relativePath), UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not read " + relativePath, e);
         }

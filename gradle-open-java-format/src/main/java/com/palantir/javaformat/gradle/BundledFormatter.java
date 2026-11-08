@@ -14,11 +14,12 @@
 
 package com.palantir.javaformat.gradle;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
@@ -86,10 +87,7 @@ public final class BundledFormatter {
     }
 
     private static List<Jar> list(ClassLoader plugin) {
-        return new String(resource(plugin, LIST), StandardCharsets.UTF_8)
-                .lines()
-                .map(Jar::parse)
-                .toList();
+        return new String(resource(plugin, LIST), UTF_8).lines().map(Jar::parse).toList();
     }
 
     private static boolean isComplete(Path dir, List<Jar> list) {

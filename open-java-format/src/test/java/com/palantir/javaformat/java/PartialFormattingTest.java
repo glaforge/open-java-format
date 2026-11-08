@@ -25,7 +25,6 @@ import com.palantir.javaformat.jupiter.ParameterizedClass;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -344,7 +343,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -373,7 +372,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -416,7 +415,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -459,7 +458,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -502,7 +501,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -640,7 +639,7 @@ public final class PartialFormattingTest {
                 "}");
 
         Path path = testFolder.resolve("FormatterException.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -853,7 +852,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -967,7 +966,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -991,7 +990,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1013,7 +1012,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1034,7 +1033,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1053,7 +1052,7 @@ public final class PartialFormattingTest {
                 "");
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1286,7 +1285,7 @@ public final class PartialFormattingTest {
         };
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, lines(input).getBytes(StandardCharsets.UTF_8));
+        Files.write(path, lines(input).getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1315,7 +1314,7 @@ public final class PartialFormattingTest {
         };
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, lines(input).getBytes(StandardCharsets.UTF_8));
+        Files.write(path, lines(input).getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1364,7 +1363,7 @@ public final class PartialFormattingTest {
 
     private String formatMain(String input, String... args) throws Exception {
         Path path = testFolder.resolve("Test.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -1497,7 +1496,7 @@ public final class PartialFormattingTest {
 
     private String runFormatter(String input, String[] args) throws IOException, UsageException {
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();

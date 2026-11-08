@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -148,7 +147,7 @@ final class DiagnosticTest {
         String input = "class Foo { void f() {\n g() } }";
 
         Path path = testFolder.resolve("A.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -165,7 +164,7 @@ final class DiagnosticTest {
     void parseErrorStdin() throws FormatterException, IOException, UsageException {
         String input = "class Foo { void f() {\n g() } }";
 
-        InputStream inStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+        InputStream inStream = new ByteArrayInputStream(input.getBytes(UTF_8));
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
         Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), inStream);
@@ -181,7 +180,7 @@ final class DiagnosticTest {
         String input = "class Foo { void f() {\n g('foo'); } }";
 
         Path path = testFolder.resolve("A.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -197,7 +196,7 @@ final class DiagnosticTest {
     @Test
     void lexErrorStdin() throws FormatterException, IOException, UsageException {
         String input = "class Foo { void f() {\n g('foo'); } }";
-        InputStream inStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+        InputStream inStream = new ByteArrayInputStream(input.getBytes(UTF_8));
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
         Main main = new Main(new PrintWriter(out, true), new PrintWriter(err, true), inStream);

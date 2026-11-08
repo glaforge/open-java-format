@@ -17,6 +17,7 @@ package com.palantir.javaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.palantir.javaformat.java.JavaFormatterOptions.Style;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -30,7 +31,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -73,7 +73,7 @@ final class FormatterTest {
         String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
         String expectedOutput = "class Foo {\n" + "    void f() {}\n" + "}\n";
 
-        InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+        InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
 
@@ -93,7 +93,7 @@ final class FormatterTest {
         String expectedOutput = "class Foo {\n" + "    void f() {}\n" + "}\n";
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -109,7 +109,7 @@ final class FormatterTest {
         String input = "class Foo{}\n";
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -181,7 +181,7 @@ final class FormatterTest {
         String inputResourceName = "com/palantir/javaformat/java/testimports/A.input";
         String input = getResource(inputResourceName);
         String expectedOutput = getResource(outputResourceName);
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -192,14 +192,14 @@ final class FormatterTest {
 
         assertThat(err.toString()).isEmpty();
         assertThat(out.toString()).isEmpty();
-        String output = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+        String output = new String(Files.readAllBytes(path), UTF_8);
         assertThat(output).isEqualTo(expectedOutput);
     }
 
     private String getResource(String resourceName) throws IOException {
         try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourceName)) {
             assertWithMessage("Missing resource: " + resourceName).that(stream).isNotNull();
-            return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            return CharStreams.toString(new InputStreamReader(stream, UTF_8));
         }
     }
 

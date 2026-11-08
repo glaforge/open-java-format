@@ -14,6 +14,7 @@
 
 package com.palantir.javaformat.gradle;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -23,7 +24,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -148,8 +148,7 @@ final class BundledFormatterTest {
         var bundle = Files.createDirectories(plugin.resolve(BUNDLE));
         Files.writeString(bundle.resolve("formatter.jar"), "not what the list says");
         Files.writeString(
-                bundle.resolve("jars.txt"),
-                sha256("what the list says".getBytes(StandardCharsets.UTF_8)) + " formatter.jar\n");
+                bundle.resolve("jars.txt"), sha256("what the list says".getBytes(UTF_8)) + " formatter.jar\n");
 
         try (var loader = new URLClassLoader(new URL[] {plugin.toUri().toURL()}, null)) {
             assertThatThrownBy(() -> BundledFormatter.jars(gradleUserHome, loader))
@@ -161,9 +160,7 @@ final class BundledFormatterTest {
     }
 
     private static List<String> bundledList() {
-        return new String(resource(BUNDLE + "jars.txt"), StandardCharsets.UTF_8)
-                .lines()
-                .toList();
+        return new String(resource(BUNDLE + "jars.txt"), UTF_8).lines().toList();
     }
 
     private static List<String> bundledNames() {

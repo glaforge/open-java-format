@@ -16,6 +16,8 @@
 
 package com.palantir.javaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -37,7 +39,6 @@ import com.palantir.javaformat.doc.State;
 import com.palantir.javaformat.doc.Token;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,7 +78,7 @@ public class DebugRenderer {
                 formatterDecisionsJson);
 
         try {
-            Files.write(getOutputFile(), javascript.getBytes(StandardCharsets.UTF_8));
+            Files.write(getOutputFile(), javascript.getBytes(UTF_8));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

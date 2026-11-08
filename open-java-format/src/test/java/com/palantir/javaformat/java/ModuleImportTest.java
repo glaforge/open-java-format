@@ -16,12 +16,12 @@
 
 package com.palantir.javaformat.java;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -79,7 +79,7 @@ final class ModuleImportTest {
         Main main = new Main(
                 new PrintWriter(out, true),
                 new PrintWriter(err, true),
-                new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+                new ByteArrayInputStream(input.getBytes(UTF_8)));
         int exitCode = main.format("-", "--fix-imports-only", "--skip-removing-unused-imports");
         assertThat(err.toString()).isEmpty();
         assertThat(exitCode).isZero();
