@@ -147,6 +147,24 @@ final class MultiProjectTest {
         project.succeeds("help");
     }
 
+    @Test
+    void formatDiff_formats_every_subproject_in_a_parallel_build() throws IOException, InterruptedException {
+        var project =
+                project().writeFile("a/" + MAIN_JAVA, "class Main {}\n").writeFile("b/" + MAIN_JAVA, "class Main {}\n");
+        git(project, "init");
+        git(project, "config", "user.name", "Foo");
+        git(project, "config", "user.email", "foo@bar.com");
+        // The repository this runs in may sign commits; a throwaway one has no key to sign with.
+        git(project, "config", "commit.gpgsign", "false");
+        git(project, "add", ".");
+        git(project, "commit", "-m", "Commit");
+        project.writeFile("a/" + MAIN_JAVA, UNFORMATTED).writeFile("b/" + MAIN_JAVA, UNFORMATTED);
+
+        project.succeeds("formatDiff", "--parallel");
+
+        assertFormatted(project, "a/" + MAIN_JAVA, "b/" + MAIN_JAVA);
+    }
+
     /** The layout of the docs, with no java on the root project. */
     private GradleTestProject project() {
         return new GradleTestProject(projectDir)
@@ -228,6 +246,18 @@ final class MultiProjectTest {
     private static void write(Path file, String content) throws IOException {
         if (!Files.exists(file)) {
             Files.writeString(file, content);
+        }
+    }
+
+    private static void git(GradleTestProject project, String... args) throws IOException, InterruptedException {
+        var command = new String[args.length + 1];
+        command[0] = "git";
+        System.arraycopy(args, 0, command, 1, args.length);
+        var process =
+                new ProcessBuilder(command).directory(project.path().toFile()).start();
+        var exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("git " + String.join(" ", args) + " failed with exit code " + exitCode);
         }
     }
 }
