@@ -105,7 +105,7 @@ private static void configureResolvedVersionsWithVersionMapping(Project project)
 | IntelliJ plugin ID | `palantir-java-format` | `open-java-format` |
 | Eclipse plugin bundle | `palantir-java-format-eclipse-plugin` | `open-java-format-eclipse-plugin` |
 | CLI style flag | `--palantir`, `-palantir` | none: there is one style |
-| Formatter style | `PALANTIR` | `OJF` |
+| Formatter style | `PALANTIR` | `OJF` (`PALANTIR` kept as a `@Deprecated` alias) |
 | Native formatter Gradle property | `palantir.native.formatter` | `openjavaformat.native.formatter` |
 | Java packages | `com.palantir.javaformat.*` | **unchanged** |
 | Version numbers | `2.98.0` | `21.<minor>.<build>`, see [Versions](#versions) |

@@ -32,6 +32,15 @@ public final class JavaFormatterOptions {
         /** The default Open Java Format Style configuration. */
         OJF(2, 120),
 
+        /**
+         * Alias for {@link #OJF} kept for backward compatibility with {@code palantir-java-format} callers (such as
+         * Spotless's {@code palantirJavaFormat()} step).
+         *
+         * @deprecated use {@link #OJF} instead.
+         */
+        @Deprecated
+        PALANTIR(2, 120),
+
         /** The default Google Java Style configuration. */
         GOOGLE(1, 100),
 

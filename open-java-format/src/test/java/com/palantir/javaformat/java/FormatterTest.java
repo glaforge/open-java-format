@@ -359,4 +359,35 @@ final class FormatterTest {
 
         assertThat(formatter.formatSource(input)).isEqualTo(expected);
     }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void palantirStyleAliasMatchesOjfStyle() throws FormatterException {
+        Style palantirStyle = Style.valueOf("PALANTIR");
+        assertThat(palantirStyle).isEqualTo(Style.PALANTIR);
+        assertThat(palantirStyle.indentationMultiplier()).isEqualTo(Style.OJF.indentationMultiplier());
+        assertThat(palantirStyle.maxLineLength()).isEqualTo(Style.OJF.maxLineLength());
+
+        String input = """
+            package com.example;
+
+            import java.util.Set;
+            import java.util.List;
+            import static java.util.Collections.emptyList;
+
+            public class Sample {
+            public List<String> items() {
+            return emptyList();
+            }
+            }
+            """;
+        Formatter palantirFormatter = Formatter.createFormatter(
+                JavaFormatterOptions.builder().style(palantirStyle).build());
+
+        assertThat(palantirFormatter.formatSource(input)).isEqualTo(FORMATTER.formatSource(input));
+        assertThat(palantirFormatter.formatSourceAndFixImports(input))
+                .isEqualTo(FORMATTER.formatSourceAndFixImports(input));
+        assertThat(ImportOrderer.reorderImports(input, palantirStyle))
+                .isEqualTo(ImportOrderer.reorderImports(input, Style.OJF));
+    }
 }
