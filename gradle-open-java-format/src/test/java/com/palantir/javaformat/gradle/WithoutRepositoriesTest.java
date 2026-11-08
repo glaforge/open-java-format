@@ -19,7 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.palantir.javaformat.gradle.testing.GradleTestProject;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.BuildTask;
+import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
@@ -92,6 +97,55 @@ final class WithoutRepositoriesTest {
         project.succeeds("formatDiff", "--parallel");
 
         assertFormatted(project, "a/" + MAIN_JAVA, "b/" + MAIN_JAVA);
+    }
+
+    @Test
+    void the_idea_settings_list_the_formatter_inside_the_plugin() {
+        // updateOpenJavaFormatXml runs with every build of a root project that applies idea.
+        var project = ideaProject();
+
+        var result = project.succeeds("help");
+
+        var jars = BundledFormatter.jars(gradleUserHome(result).toFile());
+        assertThat(project.readFile(".idea/open-java-format.xml"))
+                .contains(jars.stream().map(jar -> jar.toURI().toString()).toList());
+    }
+
+    @Test
+    @DisabledOnOs(
+            value = OS.WINDOWS,
+            disabledReason =
+                    "A daemon of another test may hold the extracted jars open, and Windows does not delete it")
+    void the_idea_settings_are_written_again_once_the_extracted_formatter_is_deleted() {
+        var project = ideaProject();
+        var gradleUserHome = gradleUserHome(project.succeeds("help"));
+        new GradleTestProject(gradleUserHome).delete("open-java-format-caches/" + BundledFormatter.hash());
+
+        var result = project.succeeds("help");
+
+        // The IDE reads the jars from there: the task must not be up to date while they are gone.
+        assertThat(result.task(":updateOpenJavaFormatXml"))
+                .isNotNull()
+                .extracting(BuildTask::getOutcome)
+                .isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(BundledFormatter.jars(gradleUserHome.toFile()))
+                .allSatisfy(jar -> assertThat(jar).isFile());
+    }
+
+    /** Prints the Gradle user home, where the formatter inside the plugin is extracted. */
+    private GradleTestProject ideaProject() {
+        return project()
+                .plugins("java", "dev.openjavaformat.java-format", "idea")
+                .buildGradle("println \"gradleUserHome=${gradle.gradleUserHomeDir}\"");
+    }
+
+    private static Path gradleUserHome(BuildResult result) {
+        return result.getOutput()
+                .lines()
+                .filter(line -> line.startsWith("gradleUserHome="))
+                .map(line -> Path.of(line.substring("gradleUserHome=".length())))
+                .findFirst()
+                .orElseThrow();
     }
 
     private GradleTestProject project() {
