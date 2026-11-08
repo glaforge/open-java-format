@@ -28,6 +28,7 @@ tasks.withType(JavaCompile).configureEach {
         error('CanonicalAnnotationSyntax')
         error('CollectorMutability')
         error('DirectReturn')
+        error('EffectivelyPrivate')
         error('FormatStringConcatenation')
         error('JUnitClassModifiers')
         error('JUnitMethodDeclaration')

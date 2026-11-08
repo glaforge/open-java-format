@@ -181,7 +181,7 @@ public class RemoveUnusedImports {
             private class ReferenceScanner extends TreeScanner<Void, Void> {
                 private final long basePos;
 
-                public ReferenceScanner(long basePos) {
+                ReferenceScanner(long basePos) {
                     this.basePos = basePos;
                 }
 

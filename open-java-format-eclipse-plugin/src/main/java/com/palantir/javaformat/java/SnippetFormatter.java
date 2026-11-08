@@ -42,18 +42,18 @@ public class SnippetFormatter {
         int offset;
         final StringBuilder contents = new StringBuilder();
 
-        public SnippetWrapper append(String str) {
+        SnippetWrapper append(String str) {
             contents.append(str);
             return this;
         }
 
-        public SnippetWrapper appendSource(String source) {
+        SnippetWrapper appendSource(String source) {
             this.offset = contents.length();
             contents.append(source);
             return this;
         }
 
-        public void closeBraces(int initialIndent) {
+        void closeBraces(int initialIndent) {
             for (int i = initialIndent; --i >= 0; ) {
                 contents.append("\n").append(createIndentationString(i)).append("}");
             }

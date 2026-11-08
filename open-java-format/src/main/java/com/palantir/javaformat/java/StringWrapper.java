@@ -173,7 +173,7 @@ public final class StringWrapper {
             this.lineMap = unit.getLineMap();
         }
 
-        protected TreeRangeMap<Integer, String> getReflowReplacements() {
+        TreeRangeMap<Integer, String> getReflowReplacements() {
             // Paths to string literals that extend past the column limit.
             List<TreePath> longStringLiterals = new ArrayList<>();
             // Paths to text blocks to be re-indented.

@@ -108,8 +108,7 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
         private final AsyncFormattingRequest request;
         private final Optional<FormatterService> formatterService;
 
-        public PalantirJavaFormatFormattingTask(
-                AsyncFormattingRequest request, Optional<FormatterService> formatterService) {
+        PalantirJavaFormatFormattingTask(AsyncFormattingRequest request, Optional<FormatterService> formatterService) {
             this.request = request;
             this.formatterService = formatterService;
         }
@@ -174,7 +173,7 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
             }
         }
 
-        public static String applyReplacements(String input, Collection<Replacement> replacementsCollection) {
+        static String applyReplacements(String input, Collection<Replacement> replacementsCollection) {
             List<Replacement> replacements = new ArrayList<>(replacementsCollection);
             replacements.sort(comparing((Replacement r) -> r.getReplaceRange().lowerEndpoint())
                     .reversed());

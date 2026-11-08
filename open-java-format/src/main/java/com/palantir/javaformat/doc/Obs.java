@@ -95,7 +95,7 @@ public final class Obs {
         private final FinishLevelNode finisher;
         private final int startColumn;
 
-        public LevelNodeImpl(Level level, State incomingState, int parentExplorationId, Sink sink) {
+        LevelNodeImpl(Level level, State incomingState, int parentExplorationId, Sink sink) {
             this.level = level;
             this.sink = sink;
             this.finisher = sink.writeLevelNode(id(), parentExplorationId, incomingState, level);
@@ -170,7 +170,7 @@ public final class Obs {
         private final FinishExplorationNode finishExplorationNode;
         private final Optional<Level> parentLevel;
 
-        public ExplorationNodeImpl(
+        ExplorationNodeImpl(
                 @Nullable LevelNodeImpl parent,
                 String humanDescription,
                 Sink sink,

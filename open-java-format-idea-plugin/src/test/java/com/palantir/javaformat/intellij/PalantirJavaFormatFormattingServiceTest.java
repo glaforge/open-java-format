@@ -126,7 +126,7 @@ final class PalantirJavaFormatFormattingServiceTest {
     }
 
     private static final class DelegatingFormatter extends PalantirJavaFormatFormattingService {
-        public DelegatingFormatter() {
+        DelegatingFormatter() {
             this.setPluginDescriptor(
                     requireNonNull(FormattingService.EP_NAME.findExtension(PalantirJavaFormatFormattingService.class))
                             .getPluginDescriptor()
