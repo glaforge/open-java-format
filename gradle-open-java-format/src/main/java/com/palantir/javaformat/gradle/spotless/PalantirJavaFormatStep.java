@@ -45,9 +45,9 @@ public final class PalantirJavaFormatStep {
         ensureImplementationNotDirectlyLoadable();
         // Spotless keeps a step in two forms, and neither can hold the configuration or a loaded formatter, which do
         // not serialize. The configuration cache stores the declared jars, resolved when the entry is written at the
-        // earliest. The up-to-date check compares the signature of the jars the step formats with, so that another
-        // formatter makes the task run again; Spotless takes it when the task runs. The formatter is loaded from the
-        // jars on first use.
+        // earliest. The up-to-date check compares the step's signature, so that another formatter makes the task run
+        // again; Spotless takes it when the task runs, and stores it in the configuration cache entry too. The
+        // formatter is loaded from the jars on first use, after the plugin's own are extracted if need be.
         return FormatterStep.createLazy(
                 NAME,
                 () -> new Jars(List.copyOf(formatterClasspath.getFiles()), gradleUserHome),
@@ -55,11 +55,7 @@ public final class PalantirJavaFormatStep {
                 PalantirJavaFormatStep::createFormat);
     }
 
-    /**
-     * The jars as the configuration cache stores them: those the build declared, or none, for the formatter inside the
-     * plugin. That one's jars are found, or extracted again, when the step is signed: the directory they were extracted
-     * into may be gone by the time a build reuses the entry.
-     */
+    /** The jars as the configuration cache stores them: those the build declared, or none, for the plugin's own. */
     static final class Jars implements Serializable {
         private static final long serialVersionUID = 1L;
 
@@ -71,14 +67,45 @@ public final class PalantirJavaFormatStep {
             this.gradleUserHome = gradleUserHome;
         }
 
-        /** By name, size and content, not path: the build cache key holds for another directory and machine. */
-        FileSignature sign() throws IOException {
-            return FileSignature.signAsList(BundledFormatter.jarsUnlessOverridden(override, gradleUserHome));
+        Signature sign() throws IOException {
+            return new Signature(
+                    override.isEmpty() ? BundledFormatter.hash() : "",
+                    FileSignature.signAsList(override),
+                    gradleUserHome);
         }
     }
 
-    private static FormatterFunc createFormat(FileSignature jars) {
-        FormatterService formatter = FormatterServiceLoader.load(jars.files());
+    /**
+     * What the up-to-date check and the build cache key compare, never a path, so that the key holds for another
+     * directory and machine. The jars a build declared go by name, size and content. The plugin's own go by the hash of
+     * their list, which holds every jar's sha256: nothing on disk is read, so storing a configuration cache entry does
+     * not depend on whether the jars were extracted, and a build after they were deleted still reuses the entry.
+     */
+    static final class Signature implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        // Spotless compares the signature in its serialized form, and reads nothing out of it.
+        @SuppressWarnings("UnusedVariable")
+        private final String bundled;
+
+        private final FileSignature override;
+
+        /** Where to extract the plugin's own jars. Spotless formats with a signature it made, never one it read back. */
+        private final transient File gradleUserHome;
+
+        Signature(String bundled, FileSignature override, File gradleUserHome) {
+            this.bundled = bundled;
+            this.override = override;
+            this.gradleUserHome = gradleUserHome;
+        }
+
+        List<File> jars() {
+            return BundledFormatter.jarsUnlessOverridden(override.files(), gradleUserHome);
+        }
+    }
+
+    private static FormatterFunc createFormat(Signature signature) {
+        FormatterService formatter = FormatterServiceLoader.load(signature.jars());
         return formatter::formatSourceReflowStringsAndFixImports;
     }
 
