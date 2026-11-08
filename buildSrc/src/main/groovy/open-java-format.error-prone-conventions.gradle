@@ -27,6 +27,7 @@ tasks.withType(JavaCompile).configureEach {
         error('RefactorSwitch')
         error('SameNameButDifferent')
         error('UnusedVariable')
+        disable('LexicographicalAnnotationListing')
     }
 }
 
