@@ -66,6 +66,7 @@ public final class GradleTestProject {
     private final StringBuilder gradleProperties = new StringBuilder();
     private boolean configurationCache = true;
     private boolean spotlessOnClasspath = true;
+    private boolean repositories = true;
     private Optional<Path> buildCacheDir = Optional.empty();
 
     public GradleTestProject(Path projectDir) {
@@ -136,6 +137,12 @@ public final class GradleTestProject {
      */
     public GradleTestProject withBuildCache(Path directory) {
         this.buildCacheDir = Optional.of(directory);
+        return this;
+    }
+
+    /** Leaves out the root project's {@code repositories { mavenCentral() } }: the build declares no repository at all. */
+    public GradleTestProject withoutRepositories() {
+        this.repositories = false;
         return this;
     }
 
@@ -234,7 +241,11 @@ public final class GradleTestProject {
         StringBuilder script = new StringBuilder("plugins {\n");
         plugins.forEach(id -> script.append("    id '").append(id).append("'\n"));
         pluginsNotApplied.forEach(id -> script.append("    id '").append(id).append("' apply false\n"));
-        script.append("}\n\nrepositories {\n    mavenCentral()\n}\n\n").append(buildGradle);
+        script.append("}\n\n");
+        if (repositories) {
+            script.append("repositories {\n    mavenCentral()\n}\n\n");
+        }
+        script.append(buildGradle);
 
         StringBuilder settings = new StringBuilder("rootProject.name = 'test-project'\n");
         for (var name : subprojects) {
