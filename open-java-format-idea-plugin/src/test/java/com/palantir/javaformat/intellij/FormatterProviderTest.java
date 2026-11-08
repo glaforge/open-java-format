@@ -22,7 +22,7 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.JavaTestFixtureFactory;
 import com.palantir.javaformat.bootstrap.BootstrappingFormatterService;
 import com.palantir.javaformat.bootstrap.NativeImageFormatterService;
-import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
+import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.StoredSettings;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +45,7 @@ final class FormatterProviderTest {
         fixture = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(projectBuilder.getFixture());
         fixture.setUp();
         settings = PalantirJavaFormatSettings.getInstance(fixture.getProject());
-        settings.loadState(new State());
+        settings.loadState(new StoredSettings());
     }
 
     @AfterEach

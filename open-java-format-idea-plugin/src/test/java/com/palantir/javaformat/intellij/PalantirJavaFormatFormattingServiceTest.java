@@ -35,7 +35,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.JavaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
-import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
+import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.StoredSettings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +70,7 @@ final class PalantirJavaFormatFormattingServiceTest {
 
         settings = PalantirJavaFormatSettings.getInstance(fixture.getProject());
 
-        State resetState = new State();
+        var resetState = new StoredSettings();
         resetState.setEnabled("true");
         settings.loadState(resetState);
     }

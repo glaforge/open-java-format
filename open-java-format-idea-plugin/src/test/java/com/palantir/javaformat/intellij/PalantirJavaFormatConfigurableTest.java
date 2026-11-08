@@ -34,7 +34,7 @@ import com.intellij.ui.components.ActionLink;
 import com.palantir.javaformat.intellij.EmbeddedNativeImage.Installed;
 import com.palantir.javaformat.intellij.EmbeddedNativeImage.Status;
 import com.palantir.javaformat.intellij.PalantirJavaFormatConfigurable.StatusLine;
-import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
+import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.StoredSettings;
 import java.awt.Component;
 import java.awt.Container;
 import java.io.IOException;
@@ -74,7 +74,7 @@ final class PalantirJavaFormatConfigurableTest {
         fixture = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(projectBuilder.getFixture());
         fixture.setUp();
         settings = PalantirJavaFormatSettings.getInstance(fixture.getProject());
-        settings.loadState(new State());
+        settings.loadState(new StoredSettings());
         settings.setEnabled(true);
         // Nothing downloaded, and nowhere to download from.
         var embedded = new EmbeddedNativeImage(
@@ -104,7 +104,7 @@ final class PalantirJavaFormatConfigurableTest {
 
     @Test
     void readsAndWritesTheEnabledSetting() throws Throwable {
-        State disabled = new State();
+        var disabled = new StoredSettings();
         disabled.setEnabled("false");
         settings.loadState(disabled);
 

@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.util.xmlb.XmlSerializer;
-import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
+import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.StoredSettings;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
@@ -42,7 +42,7 @@ final class PalantirJavaFormatSettingsTest {
 
     @Test
     void doesNotWriteACodeStyle() {
-        var xml = JDOMUtil.write(XmlSerializer.serialize(new State()));
+        var xml = JDOMUtil.write(XmlSerializer.serialize(new StoredSettings()));
 
         assertThat(xml).doesNotContain("style");
     }
@@ -78,7 +78,7 @@ final class PalantirJavaFormatSettingsTest {
 
     @Test
     void takesABlankPathForNone() {
-        var state = new State();
+        var state = new StoredSettings();
         state.nativeImagePath = " ";
         var settings = new PalantirJavaFormatSettings();
         settings.loadState(state);
@@ -86,7 +86,7 @@ final class PalantirJavaFormatSettingsTest {
         assertThat(settings.getNativeImagePath()).isEmpty();
     }
 
-    private static State deserialize(@Language("xml") String xml) throws Exception {
-        return XmlSerializer.deserialize(JDOMUtil.load(xml), State.class);
+    private static StoredSettings deserialize(@Language("xml") String xml) throws Exception {
+        return XmlSerializer.deserialize(JDOMUtil.load(xml), StoredSettings.class);
     }
 }

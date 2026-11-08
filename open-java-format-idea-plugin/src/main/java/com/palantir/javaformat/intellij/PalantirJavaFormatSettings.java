@@ -18,6 +18,7 @@ package com.palantir.javaformat.intellij;
 
 import com.intellij.formatting.service.FormattingService;
 import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.project.Project;
@@ -36,12 +37,12 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
-@com.intellij.openapi.components.State(
+@State(
         name = "PalantirJavaFormatSettings",
         storages = {@Storage("open-java-format.xml")})
-public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.State> {
+public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.StoredSettings> {
 
-    private State state = new State();
+    private StoredSettings state = new StoredSettings();
 
     static PalantirJavaFormatSettings getInstance(Project project) {
         return project.getService(PalantirJavaFormatSettings.class);
@@ -49,12 +50,12 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
 
     @Nullable
     @Override
-    public State getState() {
+    public StoredSettings getState() {
         return state;
     }
 
     @Override
-    public void loadState(State state) {
+    public void loadState(StoredSettings state) {
         this.state = state;
     }
 
@@ -148,7 +149,7 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
         DISABLED
     }
 
-    static class State {
+    static class StoredSettings {
 
         private EnabledState enabled = EnabledState.UNKNOWN;
         private Optional<List<URI>> implementationClassPath = Optional.empty();
