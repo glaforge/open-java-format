@@ -34,6 +34,7 @@ tasks.withType(JavaCompile).configureEach {
         error('RedundantStringConversion')
         error('RefactorSwitch')
         error('SameNameButDifferent')
+        error('StringConcatToTextBlock')
         error('UnusedVariable')
         disable('IsInstanceLambdaUsage')
         disable('LexicographicalAnnotationAttributeListing')

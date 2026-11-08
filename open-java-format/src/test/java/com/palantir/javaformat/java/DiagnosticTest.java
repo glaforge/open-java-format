@@ -17,7 +17,6 @@ package com.palantir.javaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Joiner;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,19 +52,19 @@ final class DiagnosticTest {
 
     @Test
     void parseError() throws Exception {
-        String input = Joiner.on('\n')
-                .join(
-                        "public class InvalidSyntax {",
-                        "  private static NumPrinter {",
-                        "    public static void print(int n) {",
-                        "      System.out.printf(\"%d%n\", n);",
-                        "    }",
-                        "  }",
-                        "",
-                        "  public static void main(String[] args) {",
-                        "    NumPrinter.print(args.length);",
-                        "  }",
-                        "}");
+        String input = """
+            public class InvalidSyntax {
+              private static NumPrinter {
+                public static void print(int n) {
+                  System.out.printf("%d%n", n);
+                }
+              }
+
+              public static void main(String[] args) {
+                NumPrinter.print(args.length);
+              }
+            }\
+            """;
 
         StringWriter stdout = new StringWriter();
         StringWriter stderr = new StringWriter();

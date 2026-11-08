@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Range;
 import com.google.common.io.CharStreams;
 import java.io.ByteArrayInputStream;
@@ -70,8 +69,18 @@ final class FormatterTest {
 
     @Test
     void formatStdinStdoutWithDashFlag() throws Exception {
-        String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
-        String expectedOutput = "class Foo {\n" + "    void f() {}\n" + "}\n";
+        String input = """
+            class Foo{
+            void f
+            () {
+            }
+            }
+            """;
+        String expectedOutput = """
+            class Foo {
+                void f() {}
+            }
+            """;
 
         InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
         StringWriter out = new StringWriter();
@@ -89,8 +98,23 @@ final class FormatterTest {
 
     @Test
     void formatLengthUpToEOF() throws Exception {
-        String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n\n\n\n\n\n";
-        String expectedOutput = "class Foo {\n" + "    void f() {}\n" + "}\n";
+        String input = """
+            class Foo{
+            void f
+            () {
+            }
+            }
+
+
+
+
+
+            """;
+        String expectedOutput = """
+            class Foo {
+                void f() {}
+            }
+            """;
 
         Path path = testFolder.resolve("Foo.java");
         Files.write(path, input.getBytes(UTF_8));
@@ -128,19 +152,19 @@ final class FormatterTest {
         assertThat(output).isEqualTo(expect);
     }
 
-    private static final String UNORDERED_IMPORTS = Joiner.on('\n')
-            .join(
-                    "import com.google.common.base.Preconditions;",
-                    "",
-                    "import static org.junit.Assert.fail;",
-                    "import static com.google.truth.Truth.assertThat;",
-                    "",
-                    "import org.junit.runners.JUnit4;",
-                    "import org.junit.runner.RunWith;",
-                    "",
-                    "import java.util.List;",
-                    "",
-                    "import javax.annotations.Nullable;");
+    private static final String UNORDERED_IMPORTS = """
+        import com.google.common.base.Preconditions;
+
+        import static org.junit.Assert.fail;
+        import static com.google.truth.Truth.assertThat;
+
+        import org.junit.runners.JUnit4;
+        import org.junit.runner.RunWith;
+
+        import java.util.List;
+
+        import javax.annotations.Nullable;\
+        """;
 
     @Test
     void importsNotReorderedByDefault() throws FormatterException {
@@ -217,17 +241,27 @@ final class FormatterTest {
 
     @Test
     void blankLinesImportComment() throws FormatterException {
-        String withBlank = "package p;\n"
-                + "\n"
-                + "/** test */\n"
-                + "\n"
-                + "import a.A;\n"
-                + "\n"
-                + "class T {\n"
-                + "    A a;\n"
-                + "}\n";
-        String withoutBlank =
-                "package p;\n" + "\n" + "/** test */\n" + "import a.A;\n" + "\n" + "class T {\n" + "    A a;\n" + "}\n";
+        String withBlank = """
+            package p;
+
+            /** test */
+
+            import a.A;
+
+            class T {
+                A a;
+            }
+            """;
+        String withoutBlank = """
+            package p;
+
+            /** test */
+            import a.A;
+
+            class T {
+                A a;
+            }
+            """;
 
         // Formatting deletes the blank line between the "javadoc" and the first import.
         assertThat(FORMATTER.formatSource(withBlank)).isEqualTo(withoutBlank);
@@ -254,13 +288,15 @@ final class FormatterTest {
     @Test
     void producesFormattingChangesOnAlreadyFormattedFiles() throws FormatterException {
         Formatter formatter = FORMATTER;
-        String simpleClass = "package com.palantir;\n"
-                + "\n"
-                + "public final class Formatted {\n"
-                + "  public static int count(int number) {\n"
-                + "    return number;\n"
-                + "  }\n"
-                + "}";
+        String simpleClass = """
+            package com.palantir;
+
+            public final class Formatted {
+              public static int count(int number) {
+                return number;
+              }
+            }\
+            """;
         // This is kinda overkill but the point of the test is to show that it
         // is for sure formatted and still producing a replacement.
         String formattedClass = formatter.formatSourceAndFixImports(simpleClass);
