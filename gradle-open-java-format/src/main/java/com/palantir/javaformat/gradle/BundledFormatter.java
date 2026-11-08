@@ -19,18 +19,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * The Java-based formatter that comes inside the plugin: the jars of its runtime classpath, which the build puts under
@@ -42,9 +38,7 @@ import java.util.stream.Stream;
  * changes. That is also why a daemon holding the jars open, as Windows does not let a file be replaced, gets in nobody's
  * way.
  *
- * <p>Builds and daemons may extract at the same time. Each extracts into a directory of its own next to the target and
- * renames it into place, which fails when the target is already there; the build that loses deletes its copy and uses
- * the one that won.
+ * <p>Builds and daemons may extract at the same time: see {@link AtomicCacheDirectory}.
  */
 public final class BundledFormatter {
 
@@ -84,10 +78,9 @@ public final class BundledFormatter {
 
     static List<File> jars(Path gradleUserHome, ClassLoader plugin) {
         var list = list(plugin);
-        var caches = gradleUserHome.resolve(CACHES);
-        var target = caches.resolve(hash(plugin));
+        var target = gradleUserHome.resolve(CACHES).resolve(hash(plugin));
         if (!isComplete(target, list)) {
-            extract(plugin, list, caches, target);
+            extract(plugin, list, target);
         }
         return list.stream().map(jar -> target.resolve(jar.name()).toFile()).toList();
     }
@@ -103,22 +96,16 @@ public final class BundledFormatter {
         return list.stream().allMatch(jar -> Files.isRegularFile(dir.resolve(jar.name())));
     }
 
-    private static void extract(ClassLoader plugin, List<Jar> list, Path caches, Path target) {
+    private static void extract(ClassLoader plugin, List<Jar> list, Path target) {
         try {
-            Files.createDirectories(caches);
-            var copy = Files.createTempDirectory(caches, target.getFileName() + "-");
-            try {
-                for (var jar : list) {
-                    copy(plugin, jar, copy.resolve(jar.name()));
-                }
-                if (Files.exists(target) && !isComplete(target, list)) {
-                    // Someone deleted a jar out of it. Whoever still runs from it keeps the files it has open.
-                    delete(target);
-                }
-                moveIntoPlace(copy, target);
-            } finally {
-                delete(copy);
-            }
+            AtomicCacheDirectory.create(
+                    target,
+                    dir -> {
+                        for (var jar : list) {
+                            copy(plugin, jar, dir.resolve(jar.name()));
+                        }
+                    },
+                    existing -> isComplete(existing, list));
         } catch (IOException e) {
             throw new UncheckedIOException("Could not extract the formatter's jars into " + target, e);
         }
@@ -135,41 +122,6 @@ public final class BundledFormatter {
                     "%s in the open-java-format Gradle plugin has sha256 %s, but %s lists %s: the plugin's jar is"
                             + " damaged",
                     jar.name(), actual, LIST, jar.sha256()));
-        }
-    }
-
-    /** Renames the copy into place, unless another build got there first: then the copy is left to be deleted. */
-    private static void moveIntoPlace(Path copy, Path target) throws IOException {
-        try {
-            Files.move(copy, target, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException e) {
-            // Both are in the same directory, so the move is a rename all the same.
-            moveUnlessThere(copy, target);
-        } catch (IOException e) {
-            if (!Files.isDirectory(target)) {
-                throw e;
-            }
-        }
-    }
-
-    private static void moveUnlessThere(Path copy, Path target) throws IOException {
-        try {
-            Files.move(copy, target);
-        } catch (IOException e) {
-            if (!Files.isDirectory(target)) {
-                throw e;
-            }
-        }
-    }
-
-    private static void delete(Path dir) throws IOException {
-        if (!Files.exists(dir)) {
-            return;
-        }
-        try (Stream<Path> paths = Files.walk(dir)) {
-            for (var path : paths.sorted(Comparator.reverseOrder()).toList()) {
-                Files.deleteIfExists(path);
-            }
         }
     }
 

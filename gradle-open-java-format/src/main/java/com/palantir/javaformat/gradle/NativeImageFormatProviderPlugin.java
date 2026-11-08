@@ -21,7 +21,6 @@ import java.util.Collections;
 import javax.inject.Inject;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 
@@ -40,7 +39,7 @@ public abstract class NativeImageFormatProviderPlugin implements Plugin<Project>
 
         Provider<NativePlatform> platform = NativePlatform.current(getProviderFactory());
         String implementationVersion = JavaFormatExtension.class.getPackage().getImplementationVersion();
-        rootProject.getConfigurations().register(NATIVE_CONFIGURATION_NAME, conf -> {
+        var nativeImage = rootProject.getConfigurations().register(NATIVE_CONFIGURATION_NAME, conf -> {
             conf.setDescription("Internal configuration for resolving the open-java-format native image");
             conf.setCanBeConsumed(false);
             conf.setCanBeResolved(true);
@@ -51,14 +50,9 @@ public abstract class NativeImageFormatProviderPlugin implements Plugin<Project>
                                 "dev.openjavaformat:open-java-format-native:%s:%s@%s",
                                 implementationVersion, p.classifier(), p.extension())))));
             });
-            conf.getAttributes().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "executable-nativeImage");
         });
-        rootProject.getDependencies().registerTransform(ExecutableTransform.class, transformSpec -> {
-            transformSpec
-                    .getFrom()
-                    .attributeProvider(
-                            ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, platform.map(NativePlatform::extension));
-            transformSpec.getTo().attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "executable-nativeImage");
-        });
+        // Resolved in each project that formats, through its own repositories; formatDiff copies the image it gets
+        // into open-java-format-caches, executable, and runs it from there.
+        FormatterClasspath.offerNativeImage(rootProject, nativeImage);
     }
 }
