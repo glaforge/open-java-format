@@ -27,6 +27,8 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -94,6 +96,37 @@ final class ConfigurationCacheTest {
                     .contains("to fix all violations")
                     .doesNotContain("lint error");
         }
+    }
+
+    @Test
+    @DisabledOnOs(
+            value = OS.WINDOWS,
+            disabledReason = "The daemon keeps the extracted jars open, and Windows does not delete an open file")
+    void spotlessApply_reuses_the_entry_after_the_extracted_formatter_is_deleted() throws IOException {
+        // The formatter inside the plugin, not the jars this build made: nothing in palantirJavaFormat.
+        var project = new GradleTestProject(projectDir)
+                .configurationCache(true)
+                .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
+                .withJavacInternalExports()
+                .buildGradle("println \"gradleUserHome=${gradle.gradleUserHomeDir}\"")
+                .writeFile(MAIN_JAVA, UNFORMATTED);
+        var stored = project.succeeds("spotlessApply");
+        assertThat(stored.getOutput()).contains(STORED);
+
+        // Storing the entry must not depend on the extracted jars, which a later build may find gone.
+        var gradleUserHome = stored.getOutput()
+                .lines()
+                .filter(line -> line.startsWith("gradleUserHome="))
+                .map(line -> Path.of(line.substring("gradleUserHome=".length())))
+                .findFirst()
+                .orElseThrow();
+        new GradleTestProject(gradleUserHome).delete("open-java-format-caches/" + BundledFormatter.hash());
+        project.writeFile(MAIN_JAVA, UNFORMATTED);
+
+        var reused = project.succeeds("spotlessApply");
+
+        assertThat(reused.getOutput()).contains(REUSED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
     }
 
     @Test
