@@ -18,6 +18,12 @@ tasks.withType(JavaCompile).configureEach {
     options.errorprone {
         // Annotation processor output (Immutables) is not ours to fix.
         excludedPaths = '.*/build/generated/.*'
+        error('FormatStringConcatenation')
+        error('JUnitClassModifiers')
+        error('JUnitMethodDeclaration')
+        error('RefactorSwitch')
+        error('SameNameButDifferent')
+        error('UnusedVariable')
     }
 }
 
@@ -25,39 +31,5 @@ tasks.withType(JavaCompile).configureEach {
 pluginManager.withPlugin('java-gradle-plugin') {
     tasks.withType(JavaCompile).configureEach {
         options.errorprone.disable('JavaxInjectOnAbstractMethod')
-    }
-}
-
-// The checks vfs-s3 makes build-breaking. The commented ones stay off until the code is fixed, one check at a
-// time: StaticImport 84, LexicographicalAnnotationListing 46, RedundantStringConversion 6, AlmostJavadoc 3
-// findings; the rest have none.
-tasks.withType(JavaCompile).configureEach {
-    options.errorprone {
-        //error('StaticImport')
-        //error('UnnecessarilyFullyQualified')
-        //error('EmptyBlockTag')
-        //error('OperatorPrecedence')
-        //error('RedundantStringConversion')
-        //error('PatternMatchingInstanceof')
-        //error('UnnecessaryParentheses')
-        //error('LexicographicalAnnotationListing')
-        error('JUnitMethodDeclaration')
-        error('JUnitClassModifiers')
-        //error('MissingSummary')
-        //error('AlmostJavadoc')
-        //error('BadImport')
-        //error('JdkObsolete')
-        // NonStaticImport (Picnic) is the inverse of StaticImport and would give contradictory advice.
-        //disable('NonStaticImport')
-    }
-}
-
-// Checks whose findings have been fixed, build-breaking so that new ones are fixed too rather than read past.
-tasks.withType(JavaCompile).configureEach {
-    options.errorprone {
-        error('FormatStringConcatenation')
-        error('RefactorSwitch')
-        error('SameNameButDifferent')
-        error('UnusedVariable')
     }
 }
