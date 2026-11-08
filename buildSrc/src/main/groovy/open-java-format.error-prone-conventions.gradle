@@ -28,6 +28,7 @@ tasks.withType(JavaCompile).configureEach {
         error('FormatStringConcatenation')
         error('JUnitClassModifiers')
         error('JUnitMethodDeclaration')
+        error('RedundantStringConversion')
         error('RefactorSwitch')
         error('SameNameButDifferent')
         error('UnusedVariable')

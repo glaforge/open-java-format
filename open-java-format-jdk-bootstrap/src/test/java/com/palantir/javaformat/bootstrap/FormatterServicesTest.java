@@ -102,8 +102,7 @@ final class FormatterServicesTest {
         return Stream.of(
                 new BootstrappingFormatterService(
                         javaBinPath(), Runtime.version().feature(), getClasspath()),
-                new NativeImageFormatterService(
-                        Path.of(System.getenv("NATIVE_IMAGE_CLASSPATH").toString())));
+                new NativeImageFormatterService(Path.of(System.getenv("NATIVE_IMAGE_CLASSPATH"))));
     }
 
     private String getTestResourceContent(String resourceName) {

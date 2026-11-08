@@ -439,10 +439,7 @@ final class MainTest {
         assertThat(exitCode).isEqualTo(0);
 
         assertThat(out.toString())
-                .isEqualTo(b.toAbsolutePath().toString()
-                        + System.lineSeparator()
-                        + c.toAbsolutePath().toString()
-                        + System.lineSeparator());
+                .isEqualTo(b.toAbsolutePath() + System.lineSeparator() + c.toAbsolutePath() + System.lineSeparator());
         assertThat(err.toString()).isEmpty();
     }
 
@@ -495,7 +492,7 @@ final class MainTest {
         Process process = formatterMain(path.toAbsolutePath().toString()).start();
         process.waitFor();
         String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
-        assertThat(out).isEqualTo(path.toAbsolutePath().toString() + System.lineSeparator());
+        assertThat(out).isEqualTo(path.toAbsolutePath() + System.lineSeparator());
         assertThat(process.exitValue()).isEqualTo(1);
     }
 
