@@ -25,6 +25,7 @@ tasks.withType(JavaCompile).configureEach {
         nullaway {
             handleTestAssertionLibraries = true
         }
+        error('CanonicalAnnotationSyntax')
         error('FormatStringConcatenation')
         error('JUnitClassModifiers')
         error('JUnitMethodDeclaration')

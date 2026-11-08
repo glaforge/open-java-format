@@ -93,11 +93,7 @@ final class SpotlessExcludesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "foo/generated_foo/src/bar",
-                "src/main/java/test/generatedNamespace",
-            })
+    @ValueSource(strings = {"foo/generated_foo/src/bar", "src/main/java/test/generatedNamespace"})
     void format_checks_non_generated_files(String srcDir) {
         project.buildGradle("""
             sourceSets {

@@ -37,9 +37,7 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
-@State(
-        name = "PalantirJavaFormatSettings",
-        storages = {@Storage("open-java-format.xml")})
+@State(name = "PalantirJavaFormatSettings", storages = @Storage("open-java-format.xml"))
 public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.StoredSettings> {
 
     private StoredSettings state = new StoredSettings();
