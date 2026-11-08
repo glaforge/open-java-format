@@ -70,7 +70,7 @@ gradlePlugin {
         openJavaFormatProvider {
             id = 'dev.openjavaformat.java-format-provider'
             implementationClass = 'com.palantir.javaformat.gradle.PalantirJavaFormatProviderPlugin'
-            description = 'Exposes a configuration containing the open-java-format jars'
+            description = 'Declares palantirJavaFormat, which overrides the formatter that comes inside the open-java-format plugins'
             displayName = 'Open Java Format Provider'
             tags.set(['java', 'style'])
         }

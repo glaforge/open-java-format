@@ -54,6 +54,7 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
     private final File projectDir;
     private final SourceSetContainer sourceSets;
     private final NamedDomainObjectProvider<Configuration> formatterClasspath;
+    private final File gradleUserHome;
 
     @Inject
     protected abstract ObjectFactory getObjects();
@@ -62,10 +63,12 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
     public SpotlessInterop(
             File projectDir,
             SourceSetContainer sourceSets,
-            NamedDomainObjectProvider<Configuration> formatterClasspath) {
+            NamedDomainObjectProvider<Configuration> formatterClasspath,
+            File gradleUserHome) {
         this.projectDir = projectDir;
         this.sourceSets = sourceSets;
         this.formatterClasspath = formatterClasspath;
+        this.gradleUserHome = gradleUserHome;
     }
 
     @Override
@@ -93,7 +96,7 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
      */
     private FormatterStep spotlessJavaFormatStep() {
         logger.info("Using the Java-based formatter");
-        return PalantirJavaFormatStep.create(formatterClasspath.get());
+        return PalantirJavaFormatStep.create(formatterClasspath.get(), gradleUserHome);
     }
 
     /**

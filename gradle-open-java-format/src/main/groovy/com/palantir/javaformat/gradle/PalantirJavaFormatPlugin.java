@@ -62,6 +62,7 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
                     task.getNativeImage().fileProvider(getNativeImplConfiguration(project));
                 } else {
                     task.getFormatterClasspath().from(formatterClasspath);
+                    task.getGradleUserHome().set(project.getGradle().getGradleUserHomeDir());
                 }
             });
         });
@@ -85,9 +86,16 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
         @PathSensitive(PathSensitivity.NAME_ONLY)
         abstract RegularFileProperty getNativeImage();
 
-        /** The jars of the Java-based formatter, which runs when the native image is not configured. */
+        /**
+         * The jars a build declared for the Java-based formatter, which runs when the native image is not configured.
+         * Most builds declare none, and the task then runs the one inside the plugin.
+         */
         @Classpath
         abstract ConfigurableFileCollection getFormatterClasspath();
+
+        /** Where the formatter inside the plugin is extracted to. */
+        @Internal
+        abstract DirectoryProperty getGradleUserHome();
 
         /**
          * The project whose changed lines are formatted. The task reads it here rather than from {@code getProject()},
@@ -114,7 +122,9 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
                 log.info("Using the Java-based formatter");
                 FormatDiff.formatDiff(
                         projectDir,
-                        FormatterServiceLoader.load(getFormatterClasspath().getFiles()));
+                        FormatterServiceLoader.load(BundledFormatter.jarsUnlessOverridden(
+                                getFormatterClasspath().getFiles(),
+                                getGradleUserHome().get().getAsFile())));
             }
         }
     }

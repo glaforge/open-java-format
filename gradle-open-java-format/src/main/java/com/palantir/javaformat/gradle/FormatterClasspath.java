@@ -28,9 +28,11 @@ import org.gradle.api.attributes.java.TargetJvmEnvironment;
 import org.gradle.api.model.ObjectFactory;
 
 /**
- * The formatter's jars for the tasks of one project, resolved in that project.
+ * The formatter a build declared in the root project's palantirJavaFormat, for the tasks of one project, resolved in
+ * that project. Declared, it overrides the formatter inside the plugin; most builds declare none, and this resolves to
+ * nothing, which needs no repository.
  *
- * <p>The formatter is declared once, in the root project's palantirJavaFormat. A task of a subproject cannot resolve
+ * <p>The override is declared once, in the root project's palantirJavaFormat. A task of a subproject cannot resolve
  * that configuration itself: in a parallel build it runs without the root project's lock, and Gradle refuses. So the
  * root project offers palantirJavaFormat as a variant of its own, and every project that formats resolves it through a
  * dependency on the root project, which Gradle resolves in the project that asks.

@@ -18,14 +18,17 @@ package com.palantir.javaformat.gradle;
 
 import com.google.common.base.Suppliers;
 import com.palantir.javaformat.java.FormatterService;
+import java.io.File;
 import java.util.function.Supplier;
 import org.gradle.api.artifacts.Configuration;
 
 public class JavaFormatExtension {
     private final Supplier<FormatterService> memoizedService;
 
-    public JavaFormatExtension(Configuration configuration) {
-        this.memoizedService = Suppliers.memoize(() -> FormatterServiceLoader.load(configuration.getFiles()));
+    /** The formatter in {@code configuration} if the build declared one there, else the one inside the plugin. */
+    public JavaFormatExtension(Configuration configuration, File gradleUserHome) {
+        this.memoizedService = Suppliers.memoize(() -> FormatterServiceLoader.load(
+                BundledFormatter.jarsUnlessOverridden(configuration.getFiles(), gradleUserHome)));
     }
 
     public FormatterService serviceLoad() {

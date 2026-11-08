@@ -26,6 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
@@ -61,6 +62,14 @@ public final class BundledFormatter {
     /** The formatter's jars, in the order of its classpath, extracted under this Gradle user home if not there yet. */
     public static List<File> jars(File gradleUserHome) {
         return jars(gradleUserHome.toPath(), BundledFormatter.class.getClassLoader());
+    }
+
+    /**
+     * The jars a build declared in palantirJavaFormat, which override the formatter inside the plugin; or, when it
+     * declared none, as most builds do, the plugin's own.
+     */
+    public static List<File> jarsUnlessOverridden(Collection<File> override, File gradleUserHome) {
+        return override.isEmpty() ? jars(gradleUserHome) : List.copyOf(override);
     }
 
     static String hash(ClassLoader plugin) {
