@@ -84,11 +84,10 @@ public final class BootstrappingFormatterService implements FormatterService {
                 jvmArgsForVersion(jdkMajorVersion),
                 implementationClassPath,
                 /* outputReplacements= */ true,
-                ranges.stream().map(RangeUtils::toStringRange).collect(Collectors.toList()));
+                ranges.stream().map(RangeUtils::toStringRange).toList());
 
-        @SuppressWarnings("for-rollout:NullAway")
         Optional<String> output =
-                FormatterCommandRunner.runWithStdin(command.toArgs(), input, Optional.of(jdkPath.getParent()));
+                FormatterCommandRunner.runWithStdin(command.toArgs(), input, Optional.ofNullable(jdkPath.getParent()));
         if (output.isEmpty() || output.get().isEmpty()) {
             return ImmutableList.of();
         }

@@ -129,7 +129,6 @@ public final class Main {
         }
     }
 
-    @SuppressWarnings("for-rollout:RedundantControlFlow")
     private int formatFiles(
             CommandLineOptions parameters, JavaFormatterOptions options, ExecutorService executorService) {
         Map<Path, String> inputs = new LinkedHashMap<>();
@@ -166,7 +165,7 @@ public final class Main {
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof FormatterException) {
                     for (FormatterDiagnostic diagnostic : ((FormatterException) e.getCause()).diagnostics()) {
-                        errWriter.println(path + ":" + diagnostic.toString());
+                        errWriter.println(path + ":" + diagnostic);
                     }
                 } else {
                     errWriter.println(path + ": error: "
@@ -229,7 +228,7 @@ public final class Main {
             }
         } catch (FormatterException e) {
             for (FormatterDiagnostic diagnostic : e.diagnostics()) {
-                errWriter.println(stdinFilename + ":" + diagnostic.toString());
+                errWriter.println(stdinFilename + ":" + diagnostic);
             }
             ok = false;
             // TODO(cpovirk): Catch other types of exception (as we do in the formatFiles case).

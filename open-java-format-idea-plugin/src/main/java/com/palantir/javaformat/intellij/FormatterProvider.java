@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
@@ -92,7 +91,7 @@ final class FormatterProvider {
     }
 
     private static List<Path> getProvidedImplementationUrls(List<URI> implementationClasspath) {
-        return implementationClasspath.stream().map(Path::of).collect(Collectors.toList());
+        return implementationClasspath.stream().map(Path::of).toList();
     }
 
     private static List<Path> getBundledImplementationUrls() {
@@ -127,7 +126,7 @@ final class FormatterProvider {
 
     private static List<Path> listDirAsUrlsUnchecked(Path dir) {
         try (Stream<Path> list = Files.list(dir)) {
-            return list.collect(Collectors.toList());
+            return list.toList();
         } catch (IOException e) {
             throw new UncheckedIOException("Couldn't list dir: " + dir, e);
         }

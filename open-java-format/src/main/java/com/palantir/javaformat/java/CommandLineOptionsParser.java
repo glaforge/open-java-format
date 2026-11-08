@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** A parser for {@link CommandLineOptions}. */
 final class CommandLineOptionsParser {
@@ -55,7 +55,6 @@ final class CommandLineOptionsParser {
             );
 
     /** Parses {@link CommandLineOptions}. */
-    @SuppressWarnings("for-rollout:NullAway")
     static CommandLineOptions parse(Iterable<String> options) {
         CommandLineOptions.Builder optionsBuilder = CommandLineOptions.builder();
         List<String> expandedOptions = new ArrayList<>();
@@ -108,7 +107,7 @@ final class CommandLineOptionsParser {
         return optionsBuilder.build();
     }
 
-    private static Integer parseInteger(Iterator<String> it, String flag, String value) {
+    private static Integer parseInteger(Iterator<String> it, String flag, @Nullable String value) {
         try {
             return Integer.valueOf(getValue(flag, it, value));
         } catch (NumberFormatException e) {
@@ -142,18 +141,18 @@ final class CommandLineOptionsParser {
      */
     private static Range<Integer> parseCharacterRange(String range) {
         List<String> args = COLON_SPLITTER.splitToList(range);
-        switch (args.size()) {
+        return switch (args.size()) {
             case 1 -> {
                 int lowerUpperRange = Integer.parseInt(args.get(0));
-                return Range.closed(lowerUpperRange, lowerUpperRange);
+                yield Range.closed(lowerUpperRange, lowerUpperRange);
             }
             case 2 -> {
                 int lower = Integer.parseInt(args.get(0));
                 int higher = Integer.parseInt(args.get(1));
-                return Range.closed(lower, higher);
+                yield Range.closed(lower, higher);
             }
             default -> throw new IllegalArgumentException(range);
-        }
+        };
     }
 
     /**
@@ -173,18 +172,18 @@ final class CommandLineOptionsParser {
      */
     private static Range<Integer> parseRange(String arg) {
         List<String> args = COLON_SPLITTER.splitToList(arg);
-        switch (args.size()) {
+        return switch (args.size()) {
             case 1 -> {
                 int line = Integer.parseInt(args.get(0)) - 1;
-                return Range.closedOpen(line, line + 1);
+                yield Range.closedOpen(line, line + 1);
             }
             case 2 -> {
                 int line0 = Integer.parseInt(args.get(0)) - 1;
                 int line1 = Integer.parseInt(args.get(1)) - 1;
-                return Range.closedOpen(line0, line1 + 1);
+                yield Range.closedOpen(line0, line1 + 1);
             }
             default -> throw new IllegalArgumentException(arg);
-        }
+        };
     }
 
     /**

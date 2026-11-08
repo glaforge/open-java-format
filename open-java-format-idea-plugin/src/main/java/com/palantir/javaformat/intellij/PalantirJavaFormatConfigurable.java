@@ -41,7 +41,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -50,7 +49,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.event.DocumentEvent;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 class PalantirJavaFormatConfigurable extends BaseConfigurable implements SearchableConfigurable {
 
@@ -130,14 +129,13 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
                 .getPanel();
     }
 
-    @NotNull
     @Override
     public String getId() {
         return "open-java-format.settings";
     }
 
-    @Nullable
     @Override
+    @Nullable
     public Runnable enableSearch(String option) {
         return null;
     }
@@ -148,14 +146,14 @@ class PalantirJavaFormatConfigurable extends BaseConfigurable implements Searcha
         return "open-java-format Settings";
     }
 
-    @Nullable
     @Override
+    @Nullable
     public String getHelpTopic() {
         return null;
     }
 
-    @Nullable
     @Override
+    @Nullable
     public JComponent createComponent() {
         if (uiDisposable == null) {
             uiDisposable = Disposer.newDisposable("open-java-format settings page");

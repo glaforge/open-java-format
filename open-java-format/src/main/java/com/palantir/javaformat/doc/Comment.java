@@ -157,7 +157,6 @@ public final class Comment extends Doc implements Op {
     public State computeBreaks(
             CommentsHelper commentsHelper, int maxWidth, State state, Obs.ExplorationNode observationNode) {
         String text = commentsHelper.rewrite(tok, maxWidth, state.column());
-        @SuppressWarnings("for-rollout:NullAway")
         int lastLineStart = Iterators.getLast(Newlines.lineOffsetIterator(text));
         int lastLineLength = text.length() - lastLineStart;
         // rewrite() indents every line after the first to state.column(), so after a comment that spans lines the

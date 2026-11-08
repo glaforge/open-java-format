@@ -17,8 +17,10 @@ package com.palantir.javaformat.gradle;
 
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.google.common.collect.ImmutableList;
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.plugins.JavaPluginExtension;
 
 public abstract class PalantirJavaFormatSpotlessPlugin implements Plugin<Project> {
@@ -43,11 +45,26 @@ public abstract class PalantirJavaFormatSpotlessPlugin implements Plugin<Project
                                         project.getProjectDir(),
                                         project.getExtensions()
                                                 .getByType(JavaPluginExtension.class)
-                                                .getSourceSets());
+                                                .getSourceSets(),
+                                        FormatterClasspath.of(project),
+                                        project.getGradle().getGradleUserHomeDir());
                         SpotlessExtension spotlessExtension =
                                 project.getExtensions().getByType(SpotlessExtension.class);
                         spotlessExtension.java(spotlessInterop);
+                        // Before the step runs: Spotless turns what a step throws into a lint of the file, which
+                        // the build cache would then hand back after the build is fixed.
+                        project.getTasks()
+                                .named("spotlessJava")
+                                .configure(spotlessJava -> spotlessJava.doFirst(new CheckJavacIsExported()));
                     }));
         });
+    }
+
+    /** A class, not a lambda: the configuration cache stores it with the task. */
+    private static final class CheckJavacIsExported implements Action<Task> {
+        @Override
+        public void execute(Task _task) {
+            FormatterServiceLoader.checkJavacIsExported();
+        }
     }
 }

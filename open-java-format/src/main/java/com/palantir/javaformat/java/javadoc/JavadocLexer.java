@@ -174,8 +174,7 @@ final class JavadocLexer {
         result = joinAdjacentLiteralsAndAdjacentWhitespace(result);
         result = inferParagraphTags(result);
         result = optionalizeSpacesAfterLinks(result);
-        result = deindentPreCodeBlocks(result);
-        return result;
+        return deindentPreCodeBlocks(result);
     }
 
     private Token readToken() throws LexException {
@@ -320,7 +319,6 @@ final class JavadocLexer {
      *
      * <p>Note that we do <i>not</i> merge a literal token and a whitespace token together.
      */
-    @SuppressWarnings("for-rollout:NullAway")
     private static ImmutableList<Token> joinAdjacentLiteralsAndAdjacentWhitespace(List<Token> input) {
         /*
          * Note: Our final token is always END_JAVADOC. This saves us some trouble:
@@ -335,7 +333,6 @@ final class JavadocLexer {
         boolean lastTagWasInlineTagStart = false;
 
         for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
-            @SuppressWarnings("for-rollout:NullAway")
             Token.Type nextType = tokens.peek().getType();
             if (nextType == INLINE_TAG_OPEN) {
                 inlineTagDepth.increment();
@@ -429,7 +426,6 @@ final class JavadocLexer {
      * <p>This method must be called after {@link #joinAdjacentLiteralsAndAdjacentWhitespace}, as it assumes that
      * adjacent whitespace tokens have already been joined.
      */
-    @SuppressWarnings("for-rollout:NullAway")
     private static ImmutableList<Token> inferParagraphTags(List<Token> input) {
         ImmutableList.Builder<Token> output = ImmutableList.builder();
 
@@ -468,7 +464,6 @@ final class JavadocLexer {
      * <p>This method must be called after {@link #joinAdjacentLiteralsAndAdjacentWhitespace}, as it assumes that
      * adjacent whitespace tokens have already been joined.
      */
-    @SuppressWarnings("for-rollout:NullAway")
     private static ImmutableList<Token> optionalizeSpacesAfterLinks(List<Token> input) {
         ImmutableList.Builder<Token> output = ImmutableList.builder();
 
@@ -498,7 +493,6 @@ final class JavadocLexer {
      *
      * <p>Also trim leading and trailing blank lines, and move the trailing `}` to its own line.
      */
-    @SuppressWarnings("for-rollout:NullAway")
     private static ImmutableList<Token> deindentPreCodeBlocks(List<Token> input) {
         ImmutableList.Builder<Token> output = ImmutableList.builder();
         for (PeekingIterator<Token> tokens = peekingIterator(input.iterator()); tokens.hasNext(); ) {
@@ -523,7 +517,6 @@ final class JavadocLexer {
         return output.build();
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static void deindentPreCodeBlock(ImmutableList.Builder<Token> output, PeekingIterator<Token> tokens) {
         Deque<Token> saved = new ArrayDeque<>();
         output.add(new Token(LITERAL, tokens.next().getValue().trim()));
@@ -549,7 +542,7 @@ final class JavadocLexer {
             if (last.length() > 1) {
                 saved.addLast(new Token(
                         LITERAL, last.getValue().substring(0, last.getValue().length() - 1)));
-                saved.addLast(new Token(FORCED_NEWLINE, null));
+                saved.addLast(new Token(FORCED_NEWLINE, "\n"));
             }
             trailingBrace = true;
         }
@@ -635,7 +628,6 @@ final class JavadocLexer {
      * with matching only one character here. That would eliminate the need for the regex entirely.
      * That might be faster or slower than what we do now.
      */
-    @SuppressWarnings("for-rollout:AlmostJavadoc")
     private static final Pattern LITERAL_PATTERN = compile("^.[^ \t\n@<{}*]*", DOTALL);
 
     private static Pattern fullCommentPattern() {

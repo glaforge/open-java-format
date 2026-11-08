@@ -17,7 +17,6 @@ package com.palantir.javaformat.gradle;
 
 import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.spotless.FormatterStep;
-import com.palantir.javaformat.gradle.spotless.NativePalantirJavaFormatStep;
 import com.palantir.javaformat.gradle.spotless.PalantirJavaFormatStep;
 import java.io.File;
 import java.util.List;
@@ -25,14 +24,13 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import org.gradle.api.Action;
-import org.gradle.api.JavaVersion;
-import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.specs.Spec;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.SourceSetContainer;
 
 /**
@@ -55,20 +53,22 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
 
     private final File projectDir;
     private final SourceSetContainer sourceSets;
-
-    @Nested
-    protected abstract NativeImageSupport getNativeImageSupport();
-
-    @Inject
-    protected abstract ConfigurationContainer getConfigurations();
+    private final NamedDomainObjectProvider<Configuration> formatterClasspath;
+    private final File gradleUserHome;
 
     @Inject
     protected abstract ObjectFactory getObjects();
 
     @Inject
-    public SpotlessInterop(File projectDir, SourceSetContainer sourceSets) {
+    public SpotlessInterop(
+            File projectDir,
+            SourceSetContainer sourceSets,
+            NamedDomainObjectProvider<Configuration> formatterClasspath,
+            File gradleUserHome) {
         this.projectDir = projectDir;
         this.sourceSets = sourceSets;
+        this.formatterClasspath = formatterClasspath;
+        this.gradleUserHome = gradleUserHome;
     }
 
     @Override
@@ -90,16 +90,13 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
                 .toList());
     }
 
+    /**
+     * The Java-based formatter, on the Gradle JVM, whether or not {@code openjavaformat.native.formatter} is set: the
+     * property is about formatDiff, and Spotless has no native step.
+     */
     private FormatterStep spotlessJavaFormatStep() {
-        if (getNativeImageSupport().isNativeImageConfigured()
-                && JavaVersion.current().compareTo(JavaVersion.VERSION_21) < 0) {
-            logger.info("Using the native-image formatter");
-            return NativePalantirJavaFormatStep.create(
-                    getConfigurations().getByName(NativeImageFormatProviderPlugin.NATIVE_CONFIGURATION_NAME));
-        }
-        logger.info("Using the Java-based formatter {}", JavaVersion.current());
-        return PalantirJavaFormatStep.create(
-                getConfigurations().getByName(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME));
+        logger.info("Using the Java-based formatter");
+        return PalantirJavaFormatStep.create(formatterClasspath.get(), gradleUserHome);
     }
 
     /**

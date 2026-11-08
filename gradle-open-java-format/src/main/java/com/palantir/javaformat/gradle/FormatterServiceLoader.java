@@ -69,7 +69,6 @@ public final class FormatterServiceLoader {
         return LOADED.computeIfAbsent(key, _key -> loadUncached(jars));
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static FormatterService loadUncached(Collection<File> jars) {
         URL[] jarUris = jars.stream()
                 .map(file -> {
@@ -84,6 +83,14 @@ public final class FormatterServiceLoader {
         ClassLoader classLoader = new URLClassLoader(jarUris, FormatterService.class.getClassLoader());
         checkJavacIsExportedTo(classLoader);
         return Iterables.getOnlyElement(ServiceLoader.load(FormatterService.class, classLoader));
+    }
+
+    /**
+     * Fails with the fix spelt out when this JVM does not export javac's internals to the formatter, without loading
+     * it. The flags export them to every unnamed module, so the plugin's own module answers for the formatter's.
+     */
+    public static void checkJavacIsExported() {
+        checkJavacIsExportedTo(FormatterServiceLoader.class.getClassLoader());
     }
 
     /**

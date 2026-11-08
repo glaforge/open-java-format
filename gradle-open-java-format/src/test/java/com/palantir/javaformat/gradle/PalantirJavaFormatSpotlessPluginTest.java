@@ -32,11 +32,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ValueSource(booleans = {true, false})
 final class PalantirJavaFormatSpotlessPluginTest {
 
-    /** ./gradlew writeImplClasspath generates this file. */
     // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
-    private static final String CLASSPATH_FILE =
-            new File("build/impl.classpath").getAbsolutePath().replace('\\', '/');
-
     private static final String NATIVE_IMAGE_FILE =
             new File("build/nativeImage.path").getAbsolutePath().replace('\\', '/');
 
@@ -51,11 +47,7 @@ final class PalantirJavaFormatSpotlessPluginTest {
     @TempDir
     private Path projectDir;
 
-    // There used to be a third case — native.formatter=true on Java 17, expecting the native-image
-    // formatter. SpotlessInterop only picks the native image when JavaVersion.current() < 21, and the
-    // generated build's daemon used to be forced onto 17 by palantir/gradle-jdks. Without that plugin
-    // TestKit runs the generated build on the same JVM as the test, so the case could only ever assert
-    // the Java-based path. Restoring it means pointing org.gradle.java.home at a JDK below 21.
+    // native.formatter=true too formats on the Gradle JVM: Spotless has no native step.
     @ParameterizedTest
     @CsvSource(
             delimiter = '|',
@@ -85,16 +77,14 @@ final class PalantirJavaFormatSpotlessPluginTest {
                     """, javaVersion)
                 .buildGradle("""
                     dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
                         %s
                     }
-                    """, CLASSPATH_FILE, extraDependencies)
+                    """, extraDependencies)
                 .writeFile(MAIN_JAVA, invalidJavaFile());
 
         BuildResult result = project.succeeds("spotlessApply", "--info");
 
-        // Spotless writes the platform's line endings, CRLF on Windows.
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(validJavaFile());
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(validJavaFile());
         assertThat(result.getOutput()).contains(expectedOutput);
     }
 

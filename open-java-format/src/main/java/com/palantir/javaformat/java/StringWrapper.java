@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Wraps string literals that exceed the column limit, and joins adjacent ones that share a line. */
 public final class StringWrapper {
@@ -130,7 +130,6 @@ public final class StringWrapper {
         return result;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private static ImmutableSet<Range<Integer>> rangesAfterAppliedReplacements(
             TreeRangeMap<Integer, String> replacements) {
         ImmutableSet.Builder<Range<Integer>> outputRanges = ImmutableSet.builder();
@@ -174,7 +173,7 @@ public final class StringWrapper {
             this.lineMap = unit.getLineMap();
         }
 
-        protected TreeRangeMap<Integer, String> getReflowReplacements() {
+        TreeRangeMap<Integer, String> getReflowReplacements() {
             // Paths to string literals that extend past the column limit.
             List<TreePath> longStringLiterals = new ArrayList<>();
             // Paths to text blocks to be re-indented.
@@ -429,7 +428,7 @@ public final class StringWrapper {
             }
 
             return textBlockToParent.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> parentToIndent.get(e.getValue())));
+                    .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> parentToIndent.get(e.getValue())));
         }
 
         private String computePrefixIndentation(
@@ -449,7 +448,6 @@ public final class StringWrapper {
                 int startLine = lineMap.getLineNumber(startingPos);
                 int lineStartPosition = lineMap.getStartPosition(startLine);
                 int endPos = getEndPosition(unit, expression);
-                int endLine = lineMap.getLineNumber(endPos);
                 int parentLine = shouldUseStartLineParent ? startParentLine : endParentLine;
                 // ignore indentation if the current argument is on the same line as the parent
                 if (startLine == parentLine) {
@@ -482,7 +480,6 @@ public final class StringWrapper {
                 int firstLineColumn,
                 List<String> plain) {}
 
-        @SuppressWarnings("for-rollout:NullAway")
         private void wrapLongStrings(
                 TreeRangeMap<Integer, String> replacements,
                 List<TreePath> longStringLiterals,
@@ -516,7 +513,6 @@ public final class StringWrapper {
 
                 // Handling leaving trailing non-string tokens at the end of the literal,
                 // e.g. the trailing `);` in `foo("...");`.
-                @SuppressWarnings("for-rollout:NullAway")
                 int end = getEndPosition(unit, getLast(flat));
                 int lineEnd = end;
                 while (Newlines.hasNewlineAt(input, lineEnd) == -1) {

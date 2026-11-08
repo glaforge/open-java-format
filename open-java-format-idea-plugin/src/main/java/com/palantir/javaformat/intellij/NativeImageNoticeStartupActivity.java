@@ -22,8 +22,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.palantir.javaformat.intellij.EmbeddedNativeImage.Status;
 import java.util.Optional;
-import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tells the user, as the IDE does about outdated spelling dictionaries, when the embedded native binary is older than
@@ -41,7 +40,7 @@ public final class NativeImageNoticeStartupActivity implements StartupActivity.D
     }
 
     @Override
-    public void runActivity(@NotNull Project project) {
+    public void runActivity(Project project) {
         var embedded = EmbeddedNativeImage.getInstance();
         embedded.removeStale();
 

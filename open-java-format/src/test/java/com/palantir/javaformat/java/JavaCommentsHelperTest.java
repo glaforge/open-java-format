@@ -97,6 +97,7 @@ final class JavaCommentsHelperTest {
     }
 
     @Test
+    @SuppressWarnings("FormatStringConcatenation") // Written out like the input, not as a template
     void theMissingSpaceRuleAppliesToEveryLineOfTheRun() throws Exception {
         // Otherwise the same source formats differently depending on whether the running JDK hands the run
         // over as one tok (23 and later) or as one tok per line.

@@ -27,6 +27,8 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -36,7 +38,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 final class ConfigurationCacheTest {
 
-    /** ./gradlew writeImplClasspath generates this file. */
+    /** ./gradlew writeImplClasspath generates this file: the jars this build made, to declare as an override. */
     private static final Path CLASSPATH_FILE = Path.of("build/impl.classpath");
 
     private static final String STORED = "Configuration cache entry stored.";
@@ -77,8 +79,7 @@ final class ConfigurationCacheTest {
             project.writeFile(MAIN_JAVA, UNFORMATTED);
 
             assertThat(project.succeeds("spotlessApply").getOutput()).contains(entry);
-            // Spotless writes the platform's line endings, CRLF on Windows.
-            assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+            assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
         }
     }
 
@@ -97,6 +98,37 @@ final class ConfigurationCacheTest {
     }
 
     @Test
+    @DisabledOnOs(
+            value = OS.WINDOWS,
+            disabledReason = "The daemon keeps the extracted jars open, and Windows does not delete an open file")
+    void spotlessApply_reuses_the_entry_after_the_extracted_formatter_is_deleted() throws IOException {
+        // The formatter inside the plugin, not the jars this build made: nothing in palantirJavaFormat.
+        var project = new GradleTestProject(projectDir)
+                .configurationCache(true)
+                .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
+                .withJavacInternalExports()
+                .buildGradle("println \"gradleUserHome=${gradle.gradleUserHomeDir}\"")
+                .writeFile(MAIN_JAVA, UNFORMATTED);
+        var stored = project.succeeds("spotlessApply");
+        assertThat(stored.getOutput()).contains(STORED);
+
+        // Storing the entry must not depend on the extracted jars, which a later build may find gone.
+        var gradleUserHome = stored.getOutput()
+                .lines()
+                .filter(line -> line.startsWith("gradleUserHome="))
+                .map(line -> Path.of(line.substring("gradleUserHome=".length())))
+                .findFirst()
+                .orElseThrow();
+        new GradleTestProject(gradleUserHome).delete("open-java-format-caches/" + BundledFormatter.hash());
+        project.writeFile(MAIN_JAVA, UNFORMATTED);
+
+        var reused = project.succeeds("spotlessApply");
+
+        assertThat(reused.getOutput()).contains(REUSED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
+    }
+
+    @Test
     void spotlessJava_is_up_to_date_until_the_formatter_jars_change() throws IOException, URISyntaxException {
         var jars = Files.readString(CLASSPATH_FILE).trim();
         var project = new GradleTestProject(projectDir)
@@ -104,22 +136,20 @@ final class ConfigurationCacheTest {
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
                 .writeFile("formatter.classpath", jars)
-                // By default Spotless checks for the platform's line endings, CRLF on Windows; PRESERVE keeps the
-                // file's own.
                 .buildGradle("""
                     dependencies {
                         palantirJavaFormat files(file("formatter.classpath").text.split(File.pathSeparator))
                     }
-                    spotless {
-                        lineEndings = 'PRESERVE'
-                    }
-                    """)
-                .writeFile(MAIN_JAVA, FORMATTED);
+                    """);
 
-        assertThat(spotlessJava(project.succeeds("spotlessCheck"))).isEqualTo(TaskOutcome.SUCCESS);
-        var unchanged = project.succeeds("spotlessCheck");
+        // spotlessApply of the same source each time, and the file it leaves: a step that changes nothing is up to
+        // date just as well, and passes a spotlessCheck of a formatted file.
+        assertThat(spotlessJava(spotlessApply(project))).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
+        var unchanged = spotlessApply(project);
         assertThat(unchanged.getOutput()).contains(REUSED);
         assertThat(spotlessJava(unchanged)).isEqualTo(TaskOutcome.UP_TO_DATE);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
 
         // Spotless signs the jars by name, size and content, as another formatter version changes them. The extra jar
         // is JUnit's, not one written into projectDir: the daemon keeps the formatter's jars open after the build, and
@@ -128,7 +158,13 @@ final class ConfigurationCacheTest {
                 Test.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         project.writeFile("formatter.classpath", jars + File.pathSeparator + extraJar);
 
-        assertThat(spotlessJava(project.succeeds("spotlessCheck"))).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(spotlessJava(spotlessApply(project))).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
+    }
+
+    /** spotlessApply of the unformatted source, written again: only its time changes. */
+    private static BuildResult spotlessApply(GradleTestProject project) {
+        return project.writeFile(MAIN_JAVA, UNFORMATTED).succeeds("spotlessApply");
     }
 
     @Test
@@ -164,17 +200,12 @@ final class ConfigurationCacheTest {
         }
     }
 
+    /** With the formatter inside the plugin. */
     private GradleTestProject project(String... plugins) {
-        // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
         return new GradleTestProject(projectDir)
                 .configurationCache(true)
                 .plugins(plugins)
-                .withJavacInternalExports()
-                .buildGradle("""
-                    dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                    }
-                    """, CLASSPATH_FILE.toAbsolutePath().toString().replace('\\', '/'));
+                .withJavacInternalExports();
     }
 
     private static TaskOutcome spotlessJava(BuildResult result) {

@@ -46,6 +46,8 @@ public abstract class PalantirJavaFormatIdeaPlugin implements Plugin<Project> {
                                 .from(rootProject
                                         .getConfigurations()
                                         .getByName(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME));
+                        task.getBundledFormatter().set(BundledFormatter.hash());
+                        task.getGradleUserHome().set(rootProject.getGradle().getGradleUserHomeDir());
                     });
 
             TaskProvider<UpdateWorkspaceXmlFile> updateWorkspaceXml = rootProject

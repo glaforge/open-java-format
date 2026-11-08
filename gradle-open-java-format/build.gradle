@@ -70,7 +70,7 @@ gradlePlugin {
         openJavaFormatProvider {
             id = 'dev.openjavaformat.java-format-provider'
             implementationClass = 'com.palantir.javaformat.gradle.PalantirJavaFormatProviderPlugin'
-            description = 'Exposes a configuration containing the open-java-format jars'
+            description = 'Declares palantirJavaFormat, which overrides the formatter that comes inside the open-java-format plugins'
             displayName = 'Open Java Format Provider'
             tags.set(['java', 'style'])
         }
@@ -117,8 +117,9 @@ tasks.register("copyNativeImage", Copy.class) {
     into("$buildDir/nativeImage")
 }
 
-// Split in two so the jar build does not need a GraalVM image: every test reads
-// impl.classpath, only the four that drive the binary read nativeImage.path.
+// Split in two so the jar build does not need a GraalVM image: the tests that declare the
+// formatter themselves read impl.classpath, which is also what bundleFormatter puts inside the
+// plugin; only the ones that drive the binary read nativeImage.path.
 //
 // Everything the doLast bodies touch is captured here, at configuration time: reaching for
 // `configurations` or `tasks` from inside them would pull the whole script into the task and
@@ -134,6 +135,31 @@ def writeImplClasspath = tasks.register("writeImplClasspath") {
     doLast {
         implClasspathFile.get().asFile.text = implFiles.asPath
     }
+}
+
+// The Java-based formatter travels inside the plugin, so that a build needs no repository and no dependency for it,
+// and runs the formatter of the plugin's own commit (#20). The jars go in unchanged, each with its own LICENSE and
+// NOTICE, next to jars.txt: a line per jar, "<sha256> <name>", in the order of the classpath. BundledFormatter
+// extracts them on first use.
+def bundledFormatterDir = layout.buildDirectory.dir("generated/bundledFormatter")
+def bundledFormatterPath = "open-java-format/formatter"
+def bundleFormatter = tasks.register("bundleFormatter", Sync) {
+    into(bundledFormatterDir)
+    into(bundledFormatterPath) {
+        from(implFiles)
+    }
+    doLast {
+        def lines = implFiles.files.collect { jar ->
+            "${java.security.MessageDigest.getInstance('SHA-256').digest(jar.bytes).encodeHex()} ${jar.name}"
+        }
+        bundledFormatterDir.get().file("${bundledFormatterPath}/jars.txt").asFile.text = lines.join('\n') + '\n'
+    }
+}
+sourceSets.main.resources.srcDir(bundleFormatter)
+
+// The sources jar takes the resources too; the formatter's jars are not the plugin's sources.
+tasks.named('sourcesJar', Jar) {
+    exclude("${bundledFormatterPath}/**")
 }
 
 def writeNativeImagePath = tasks.register("writeNativeImagePath") {

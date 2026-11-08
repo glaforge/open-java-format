@@ -15,6 +15,8 @@
  */
 package com.palantir.javaformat.java;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -31,16 +33,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.jspecify.annotations.Nullable;
 
 public final class JsonSink implements Sink {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new Jdk8Module());
 
     private final Map<Integer, ArrayNode> childrenMap = new HashMap<>();
 
-    @SuppressWarnings("for-rollout:NullAway")
+    @Nullable
     private ObjectNode rootNode;
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public FinishExplorationNode startExplorationNode(
             int exporationId,
@@ -50,7 +52,7 @@ public final class JsonSink implements Sink {
             Optional<State> incomingState) {
         ObjectNode json;
         if (parentLevelId.isPresent()) {
-            json = childrenMap.get(parentLevelId.getAsInt()).addObject();
+            json = checkNotNull(childrenMap.get(parentLevelId.getAsInt())).addObject();
         } else {
             json = rootNode = OBJECT_MAPPER.createObjectNode();
         }
@@ -72,8 +74,7 @@ public final class JsonSink implements Sink {
 
     @Override
     public FinishLevelNode writeLevelNode(int levelNodeId, int parentExplorationId, State incomingState, Level level) {
-        @SuppressWarnings("for-rollout:NullAway")
-        ObjectNode json = childrenMap.get(parentExplorationId).addObject();
+        ObjectNode json = checkNotNull(childrenMap.get(parentExplorationId)).addObject();
         json.put("type", "level");
         json.put("id", levelNodeId);
         json.put("levelId", level.id());

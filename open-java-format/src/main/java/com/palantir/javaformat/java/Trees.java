@@ -35,8 +35,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import javax.annotation.Nullable;
 import javax.lang.model.element.Name;
+import org.jspecify.annotations.Nullable;
 
 /** Utilities for working with {@link Tree}s. */
 class Trees {
@@ -142,7 +142,7 @@ class Trees {
     }
 
     /** Returns the receiver of a qualified method invocation expression, or {@code null}. */
-    @SuppressWarnings("for-rollout:NullAway")
+    @Nullable
     static ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
         ExpressionTree select = methodInvocation.getMethodSelect();
         return select instanceof MemberSelectTree memberSelectTree ? memberSelectTree.getExpression() : null;

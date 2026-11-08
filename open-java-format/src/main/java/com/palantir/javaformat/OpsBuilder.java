@@ -14,6 +14,8 @@
 
 package com.palantir.javaformat;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -49,16 +51,14 @@ public final class OpsBuilder {
 
     /** Return the actual size of the AST node at position, including comments. */
     public int actualSize(int position, int length) {
-        Input.Token startToken = input.getPositionTokenMap().get(position);
-        @SuppressWarnings("for-rollout:NullAway")
+        Input.Token startToken = checkNotNull(input.getPositionTokenMap().get(position));
         int start = startToken.getTok().getPosition();
         for (Input.Tok tok : startToken.getToksBefore()) {
             if (tok.isComment()) {
                 start = Math.min(start, tok.getPosition());
             }
         }
-        Input.Token endToken = input.getPositionTokenMap().get(position + length - 1);
-        @SuppressWarnings("for-rollout:NullAway")
+        Input.Token endToken = checkNotNull(input.getPositionTokenMap().get(position + length - 1));
         int end = endToken.getTok().getPosition() + endToken.getTok().length();
         for (Input.Tok tok : endToken.getToksAfter()) {
             if (tok.isComment()) {
@@ -70,8 +70,7 @@ public final class OpsBuilder {
 
     /** Return the start column of the token at {@code position}, including leading comments. */
     public Integer actualStartColumn(int position) {
-        Input.Token startToken = input.getPositionTokenMap().get(position);
-        @SuppressWarnings("for-rollout:NullAway")
+        Input.Token startToken = checkNotNull(input.getPositionTokenMap().get(position));
         int start = startToken.getTok().getPosition();
         int line0 = input.getLineNumber(start);
         for (Input.Tok tok : startToken.getToksBefore()) {

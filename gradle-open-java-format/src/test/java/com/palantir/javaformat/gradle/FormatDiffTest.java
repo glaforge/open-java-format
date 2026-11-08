@@ -34,7 +34,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -58,7 +57,7 @@ final class FormatDiffTest {
 
         List<String> strings = FormatDiff.parseGitDiffOutput(example1)
                 .map(FormatDiff.SingleFileDiff::toString)
-                .collect(Collectors.toList());
+                .toList();
         assertThat(strings)
                 .containsExactly(
                         "SingleFileDiff{path=build.gradle, lineRanges=[[24..25), [29..30)]}",
@@ -104,7 +103,7 @@ final class FormatDiffTest {
         process.getErrorStream().transferTo(baos);
         String stderr = baos.toString(UTF_8);
 
-        Preconditions.checkState(process.exitValue() == 0, "Expected return code of 0: " + stderr);
+        Preconditions.checkState(process.exitValue() == 0, "Expected return code of 0: %s", stderr);
     }
 
     private static Stream<FormatterService> getFormatters() throws IOException {
@@ -121,7 +120,7 @@ final class FormatDiffTest {
                 .omitEmptyStrings()
                 .splitToStream(Files.readString(CLASSPATH_FILE.toPath()))
                 .map(Path::of)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Path javaBinPath() {

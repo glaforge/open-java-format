@@ -25,7 +25,6 @@ public final class PalantirJavaFormatProviderPlugin implements Plugin<Project> {
 
     static final String CONFIGURATION_NAME = "palantirJavaFormat";
 
-    @SuppressWarnings({"for-rollout:GradleTypesAsFields", "for-rollout:NonAbstractGradleType"})
     @Override
     public void apply(Project rootProject) {
         Preconditions.checkState(
@@ -34,19 +33,21 @@ public final class PalantirJavaFormatProviderPlugin implements Plugin<Project> {
 
         rootProject.getPluginManager().apply(NativeImageFormatProviderPlugin.class);
 
-        @SuppressWarnings("for-rollout:ConfigurationAvoidanceRegistration")
         Configuration configuration = rootProject.getConfigurations().create(CONFIGURATION_NAME, conf -> {
-            conf.setDescription("Internal configuration for resolving the open-java-format implementation");
+            // Empty unless the build declares a formatter: the plugin carries its own, and needs no repository.
+            conf.setDescription("Overrides the open-java-format implementation that comes inside the plugin");
             conf.setCanBeConsumed(false);
-            conf.defaultDependencies(deps -> {
-                deps.add(rootProject
-                        .getDependencies()
-                        .create(String.format(
-                                "dev.openjavaformat:open-java-format:%s",
-                                JavaFormatExtension.class.getPackage().getImplementationVersion())));
-            });
+            // Resolved here too, by the IntelliJ task, in a root project that may well not have java.
+            FormatterClasspath.javaRuntime(conf.getAttributes(), rootProject.getObjects());
         });
+        FormatterClasspath.offer(rootProject, configuration);
 
-        rootProject.getExtensions().create("palantirJavaFormat", JavaFormatExtension.class, configuration);
+        rootProject
+                .getExtensions()
+                .create(
+                        "palantirJavaFormat",
+                        JavaFormatExtension.class,
+                        configuration,
+                        rootProject.getGradle().getGradleUserHomeDir());
     }
 }

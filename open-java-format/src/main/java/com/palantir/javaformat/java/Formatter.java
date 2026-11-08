@@ -243,7 +243,6 @@ public final class Formatter {
         return Runtime.version().feature();
     }
 
-    @SuppressWarnings("for-rollout:ThrowError")
     private static JavaInputAstVisitor createVisitor(
             final String className, final OpsBuilder builder, final JavaFormatterOptions options) {
         try {
@@ -310,8 +309,7 @@ public final class Formatter {
         input = ImportOrderer.reorderImports(input, options.style());
         input = RemoveUnusedImports.removeUnusedImports(input);
         String formatted = formatSource(input);
-        formatted = StringWrapper.wrap(options.maxLineLength(), formatted, this);
-        return formatted;
+        return StringWrapper.wrap(options.maxLineLength(), formatted, this);
     }
 
     /**

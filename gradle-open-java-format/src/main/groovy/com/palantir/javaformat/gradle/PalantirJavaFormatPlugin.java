@@ -17,19 +17,16 @@
 package com.palantir.javaformat.gradle;
 
 import com.palantir.javaformat.bootstrap.NativeImageFormatterService;
-import java.io.File;
 import java.io.IOException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Internal;
@@ -53,29 +50,21 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
         project.getPlugins().apply(PalantirJavaFormatSpotlessPlugin.class);
 
         project.getPlugins().withId("java", p -> {
+            var formatterClasspath = FormatterClasspath.of(project);
+            var nativeImage = FormatterClasspath.nativeImageOf(project);
 
             // TODO(dfox): in the future we may want to offer a simple 'format' task so people don't need to use
             // spotless to try out our formatter
             project.getTasks().register("formatDiff", FormatDiffTask.class, task -> {
                 task.getProjectDirectory().set(project.getLayout().getProjectDirectory());
+                task.getGradleUserHome().set(project.getGradle().getGradleUserHomeDir());
                 if (getNativeImageSupport().isNativeImageConfigured()) {
-                    task.getNativeImage().fileProvider(getNativeImplConfiguration(project));
+                    task.getNativeImage().fileProvider(nativeImage.map(FileCollection::getSingleFile));
                 } else {
-                    task.getFormatterClasspath().from(getImplConfiguration(project));
+                    task.getFormatterClasspath().from(formatterClasspath);
                 }
             });
         });
-    }
-
-    private static Provider<Configuration> getImplConfiguration(Project project) {
-        return project.getRootProject().getConfigurations().named(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME);
-    }
-
-    private static Provider<File> getNativeImplConfiguration(Project project) {
-        return (project.getRootProject()
-                .getConfigurations()
-                .named(NativeImageFormatProviderPlugin.NATIVE_CONFIGURATION_NAME)
-                .map(FileCollection::getSingleFile));
     }
 
     @DisableCachingByDefault(
@@ -89,9 +78,16 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
         @PathSensitive(PathSensitivity.NAME_ONLY)
         abstract RegularFileProperty getNativeImage();
 
-        /** The jars of the Java-based formatter, which runs when the native image is not configured. */
+        /**
+         * The jars a build declared for the Java-based formatter, which runs when the native image is not configured.
+         * Most builds declare none, and the task then runs the one inside the plugin.
+         */
         @Classpath
         abstract ConfigurableFileCollection getFormatterClasspath();
+
+        /** Where the formatter inside the plugin is extracted to, and the native image copied to. */
+        @Internal
+        abstract DirectoryProperty getGradleUserHome();
 
         /**
          * The project whose changed lines are formatted. The task reads it here rather than from {@code getProject()},
@@ -112,13 +108,16 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
                 log.info("Using the native-image formatter");
                 FormatDiff.formatDiff(
                         projectDir,
-                        new NativeImageFormatterService(
-                                getNativeImage().get().getAsFile().toPath()));
+                        new NativeImageFormatterService(NativeImageAtomicCopy.copyToCache(
+                                getNativeImage().get().getAsFile().toPath(),
+                                getGradleUserHome().get().getAsFile())));
             } else {
                 log.info("Using the Java-based formatter");
                 FormatDiff.formatDiff(
                         projectDir,
-                        FormatterServiceLoader.load(getFormatterClasspath().getFiles()));
+                        FormatterServiceLoader.load(BundledFormatter.jarsUnlessOverridden(
+                                getFormatterClasspath().getFiles(),
+                                getGradleUserHome().get().getAsFile())));
             }
         }
     }
