@@ -135,6 +135,18 @@ final class MultiProjectTest {
                 .doesNotContain("variants-1.0-android.jar");
     }
 
+    @Test
+    void nothing_is_resolved_for_a_build_that_does_not_format() {
+        // A formatter that cannot be resolved fails a build only once a task needs its jars.
+        var project = project().buildGradle("""
+            dependencies {
+                palantirJavaFormat 'does.not:exist:1.0'
+            }
+            """);
+
+        project.succeeds("help");
+    }
+
     /** The layout of the docs, with no java on the root project. */
     private GradleTestProject project() {
         return new GradleTestProject(projectDir)

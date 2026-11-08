@@ -30,8 +30,12 @@ public final class PalantirJavaFormatStep {
 
     private static final String NAME = "open-java-format";
 
-    /** Creates a step which formats everything - code, import order, and unused imports. */
-    public static FormatterStep create(Configuration palantirJavaFormat) {
+    /**
+     * Creates a step which formats everything - code, import order, and unused imports - with the formatter in these
+     * jars. A configuration of the project the Spotless task belongs to: resolving another project's needs that
+     * project's lock, which a parallel build does not hold.
+     */
+    public static FormatterStep create(Configuration formatterClasspath) {
         ensureImplementationNotDirectlyLoadable();
         // Spotless keeps a step in two forms, and neither can hold the configuration or a loaded formatter, which do
         // not serialize. The configuration cache stores the jars, resolved when the entry is written at the earliest.
@@ -40,7 +44,7 @@ public final class PalantirJavaFormatStep {
         // formatter is loaded from the jars on first use.
         return FormatterStep.createLazy(
                 NAME,
-                () -> FileSignature.promise(palantirJavaFormat.getFiles()),
+                () -> FileSignature.promise(formatterClasspath.getFiles()),
                 FileSignature.Promised::get,
                 PalantirJavaFormatStep::createFormat);
     }

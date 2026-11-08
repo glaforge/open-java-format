@@ -24,7 +24,8 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import org.gradle.api.Action;
-import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -52,17 +53,19 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
 
     private final File projectDir;
     private final SourceSetContainer sourceSets;
-
-    @Inject
-    protected abstract ConfigurationContainer getConfigurations();
+    private final NamedDomainObjectProvider<Configuration> formatterClasspath;
 
     @Inject
     protected abstract ObjectFactory getObjects();
 
     @Inject
-    public SpotlessInterop(File projectDir, SourceSetContainer sourceSets) {
+    public SpotlessInterop(
+            File projectDir,
+            SourceSetContainer sourceSets,
+            NamedDomainObjectProvider<Configuration> formatterClasspath) {
         this.projectDir = projectDir;
         this.sourceSets = sourceSets;
+        this.formatterClasspath = formatterClasspath;
     }
 
     @Override
@@ -90,8 +93,7 @@ public abstract class SpotlessInterop implements Action<JavaExtension> {
      */
     private FormatterStep spotlessJavaFormatStep() {
         logger.info("Using the Java-based formatter");
-        return PalantirJavaFormatStep.create(
-                getConfigurations().getByName(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME));
+        return PalantirJavaFormatStep.create(formatterClasspath.get());
     }
 
     /**

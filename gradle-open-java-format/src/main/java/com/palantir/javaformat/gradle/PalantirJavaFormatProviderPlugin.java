@@ -45,7 +45,10 @@ public final class PalantirJavaFormatProviderPlugin implements Plugin<Project> {
                                 "dev.openjavaformat:open-java-format:%s",
                                 JavaFormatExtension.class.getPackage().getImplementationVersion())));
             });
+            // Resolved here too, by the IntelliJ task, in a root project that may well not have java.
+            FormatterClasspath.javaRuntime(conf.getAttributes(), rootProject.getObjects());
         });
+        FormatterClasspath.offer(rootProject, configuration);
 
         rootProject.getExtensions().create("palantirJavaFormat", JavaFormatExtension.class, configuration);
     }

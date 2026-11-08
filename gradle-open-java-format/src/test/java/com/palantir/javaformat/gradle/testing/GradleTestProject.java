@@ -237,7 +237,15 @@ public final class GradleTestProject {
         script.append("}\n\nrepositories {\n    mavenCentral()\n}\n\n").append(buildGradle);
 
         StringBuilder settings = new StringBuilder("rootProject.name = 'test-project'\n");
-        subprojects.forEach(name -> settings.append("include '").append(name).append("'\n"));
+        for (var name : subprojects) {
+            settings.append("include '").append(name).append("'\n");
+            // Gradle refuses a project whose directory is missing.
+            try {
+                Files.createDirectories(file(name));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Could not create " + name, e);
+            }
+        }
         // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
         buildCacheDir.ifPresent(dir -> settings.append("\nbuildCache {\n    local {\n        directory = file('")
                 .append(dir.toAbsolutePath().toString().replace('\\', '/'))

@@ -43,7 +43,8 @@ public abstract class PalantirJavaFormatSpotlessPlugin implements Plugin<Project
                                         project.getProjectDir(),
                                         project.getExtensions()
                                                 .getByType(JavaPluginExtension.class)
-                                                .getSourceSets());
+                                                .getSourceSets(),
+                                        FormatterClasspath.of(project));
                         SpotlessExtension spotlessExtension =
                                 project.getExtensions().getByType(SpotlessExtension.class);
                         spotlessExtension.java(spotlessInterop);
