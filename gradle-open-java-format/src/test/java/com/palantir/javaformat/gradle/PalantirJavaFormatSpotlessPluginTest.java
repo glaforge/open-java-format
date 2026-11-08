@@ -32,11 +32,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ValueSource(booleans = {true, false})
 final class PalantirJavaFormatSpotlessPluginTest {
 
-    /** ./gradlew writeImplClasspath generates this file. */
     // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
-    private static final String CLASSPATH_FILE =
-            new File("build/impl.classpath").getAbsolutePath().replace('\\', '/');
-
     private static final String NATIVE_IMAGE_FILE =
             new File("build/nativeImage.path").getAbsolutePath().replace('\\', '/');
 
@@ -81,10 +77,9 @@ final class PalantirJavaFormatSpotlessPluginTest {
                     """, javaVersion)
                 .buildGradle("""
                     dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
                         %s
                     }
-                    """, CLASSPATH_FILE, extraDependencies)
+                    """, extraDependencies)
                 .writeFile(MAIN_JAVA, invalidJavaFile());
 
         BuildResult result = project.succeeds("spotlessApply", "--info");

@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * spotlessJava is cacheable, and the open-java-format step is part of its cache key: the key changes with the
- * formatter's jars, and not with the directory the project is in.
+ * formatter, the one inside the plugin or the one a build declares, and not with the directory the project is in.
  *
  * <p>Every build here is spotlessApply, after the source is written again. The formatted file is what shows that
  * spotlessJava's output, whether it ran, was up to date or came from the cache, holds the source formatted: a step that
@@ -42,7 +42,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ValueSource(booleans = {true, false})
 final class BuildCacheTest {
 
-    /** ./gradlew writeImplClasspath generates this file. */
+    /** ./gradlew writeImplClasspath generates this file: the jars this build made, to declare as an override. */
     private static final Path CLASSPATH_FILE = Path.of("build/impl.classpath");
 
     private static final String MAIN_JAVA = "src/main/java/Main.java";
@@ -64,7 +64,7 @@ final class BuildCacheTest {
     private Path buildCacheDir;
 
     @Test
-    void spotlessJava_is_up_to_date_when_the_source_is_written_again_unchanged() throws IOException {
+    void spotlessJava_is_up_to_date_when_the_source_is_written_again_unchanged() {
         var project = project(projectDir);
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
         assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
@@ -74,7 +74,7 @@ final class BuildCacheTest {
     }
 
     @Test
-    void spotlessJava_runs_again_when_the_source_changes() throws IOException {
+    void spotlessJava_runs_again_when_the_source_changes() {
         var project = project(projectDir);
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
 
@@ -83,7 +83,7 @@ final class BuildCacheTest {
     }
 
     @Test
-    void spotlessJava_comes_from_the_cache_when_the_source_changes_back() throws IOException {
+    void spotlessJava_comes_from_the_cache_when_the_source_changes_back() {
         var project = project(projectDir);
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
         assertThat(spotlessApply(project, OTHER_UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
@@ -93,7 +93,7 @@ final class BuildCacheTest {
     }
 
     @Test
-    void spotlessJava_comes_from_the_cache_after_the_build_directory_is_deleted() throws IOException {
+    void spotlessJava_comes_from_the_cache_after_the_build_directory_is_deleted() {
         var project = project(projectDir);
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
 
@@ -104,7 +104,7 @@ final class BuildCacheTest {
     }
 
     @Test
-    void spotlessJava_comes_from_the_cache_in_another_directory() throws IOException {
+    void spotlessJava_comes_from_the_cache_in_another_directory() {
         assertThat(spotlessApply(project(projectDir), UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
 
         // The same project somewhere else, as another checkout or another CI machine has it.
@@ -115,13 +115,25 @@ final class BuildCacheTest {
     }
 
     @Test
-    void spotlessJava_runs_again_when_the_formatter_jars_change() throws IOException, URISyntaxException {
+    void spotlessJava_runs_again_when_the_build_declares_a_formatter() throws IOException {
         var project = project(projectDir);
+        assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
+
+        // Without the build directory, only the cache could skip the task.
+        project.writeFile("formatter.classpath", formatterClasspath()).delete("build");
+
+        assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+    }
+
+    @Test
+    void spotlessJava_runs_again_when_the_declared_jars_change() throws IOException, URISyntaxException {
+        var project = project(projectDir).writeFile("formatter.classpath", formatterClasspath());
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
 
         // Spotless signs the jars by name, size and content, as another formatter version changes them. The extra jar
         // is JUnit's, not one written into projectDir: the daemon keeps the formatter's jars open after the build, and
-        // Windows does not delete an open file. Without the build directory, only the cache could skip the task.
+        // Windows does not delete an open file.
         var extraJar = Path.of(
                 Test.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         project.writeFile("formatter.classpath", formatterClasspath() + File.pathSeparator + extraJar)
@@ -131,16 +143,18 @@ final class BuildCacheTest {
         assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
     }
 
-    private GradleTestProject project(Path dir) throws IOException {
+    /** The formatter inside the plugin, unless the test writes formatter.classpath, which the build then declares. */
+    private GradleTestProject project(Path dir) {
         return new GradleTestProject(dir)
                 .configurationCache(configurationCache)
                 .withBuildCache(buildCacheDir)
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
-                .writeFile("formatter.classpath", formatterClasspath())
                 .buildGradle("""
-                    dependencies {
-                        palantirJavaFormat files(file("formatter.classpath").text.split(File.pathSeparator))
+                    if (file("formatter.classpath").exists()) {
+                        dependencies {
+                            palantirJavaFormat files(file("formatter.classpath").text.split(File.pathSeparator))
+                        }
                     }
                     """);
     }

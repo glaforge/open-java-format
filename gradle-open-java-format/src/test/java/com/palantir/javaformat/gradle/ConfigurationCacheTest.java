@@ -38,7 +38,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 final class ConfigurationCacheTest {
 
-    /** ./gradlew writeImplClasspath generates this file. */
+    /** ./gradlew writeImplClasspath generates this file: the jars this build made, to declare as an override. */
     private static final Path CLASSPATH_FILE = Path.of("build/impl.classpath");
 
     private static final String STORED = "Configuration cache entry stored.";
@@ -201,17 +201,12 @@ final class ConfigurationCacheTest {
         }
     }
 
+    /** With the formatter inside the plugin. */
     private GradleTestProject project(String... plugins) {
-        // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
         return new GradleTestProject(projectDir)
                 .configurationCache(true)
                 .plugins(plugins)
-                .withJavacInternalExports()
-                .buildGradle("""
-                    dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                    }
-                    """, CLASSPATH_FILE.toAbsolutePath().toString().replace('\\', '/'));
+                .withJavacInternalExports();
     }
 
     private static TaskOutcome spotlessJava(BuildResult result) {
