@@ -33,9 +33,8 @@ import com.intellij.psi.PsiFile;
 import com.palantir.javaformat.java.FormatterException;
 import com.palantir.javaformat.java.FormatterService;
 import com.palantir.javaformat.java.Replacement;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +56,7 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
     private PluginDescriptor pluginDescriptor;
 
     @Override
-    public void setPluginDescriptor(@NotNull PluginDescriptor pluginDescriptor) {
+    public void setPluginDescriptor(PluginDescriptor pluginDescriptor) {
         this.pluginDescriptor = pluginDescriptor;
     }
 
@@ -66,7 +65,7 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
     }
 
     @Override
-    protected FormattingTask createFormattingTask(@NotNull AsyncFormattingRequest request) {
+    protected FormattingTask createFormattingTask(AsyncFormattingRequest request) {
         Project project = request.getContext().getProject();
         // The marketplace verifier reports this class as experimental, and newer IDEs also deprecate it. It stays:
         // its replacement, com.intellij.ide.trustedProjects.TrustedProjects, is @ApiStatus.Internal — a worse thing
@@ -84,22 +83,22 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
     }
 
     @Override
-    protected @NotNull String getNotificationGroupId() {
+    protected String getNotificationGroupId() {
         return Notifications.PARSING_ERROR_NOTIFICATION_GROUP;
     }
 
     @Override
-    protected @NotNull @NlsSafe String getName() {
+    protected @NlsSafe String getName() {
         return "open-java-format";
     }
 
     @Override
-    public @NotNull Set<Feature> getFeatures() {
+    public Set<Feature> getFeatures() {
         return Set.of(Feature.FORMAT_FRAGMENTS);
     }
 
     @Override
-    public boolean canFormat(@NotNull PsiFile file) {
+    public boolean canFormat(PsiFile file) {
         return JavaFileType.INSTANCE.equals(file.getFileType())
                 && PalantirJavaFormatSettings.getInstance(file.getProject()).isEnabled();
     }

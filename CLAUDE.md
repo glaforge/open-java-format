@@ -8,8 +8,10 @@ Building and testing: the README's "Building and testing locally" section. Gradl
 - **Collections.** Plain `java.util` types. `List.of`, `List.copyOf`, `Map.of` and `Stream.toList()` give
   unmodifiable collections, so new code does not need Guava's `ImmutableList` or `ImmutableMap`; use them only
   where an existing API already hands one over.
-- **Nullability.** One annotation, `javax.annotation.Nullable` (jsr305), the one the code uses; do not add another
-  `Nullable`.
+- **Nullability.** One annotation, JSpecify's `org.jspecify.annotations.Nullable`; do not add another `Nullable`,
+  nor a `NotNull` or `NonNull`: what is not `@Nullable` is non-null, and NullAway checks it. It is a type-use
+  annotation, so on a nested type it goes before the simple name (`Input.@Nullable Token`), and on an array before
+  the brackets (`String @Nullable []`).
 - **Local variables.** `var` wherever the initializer gives the type unchanged, in `for` loops too. Not where it
   would box a primitive (`for (var n : List<Integer>)`), and not without an initializer that has a type of its own
   (a lambda, `null`).

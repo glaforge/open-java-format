@@ -146,9 +146,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
+import org.jspecify.annotations.Nullable;
 
 /** An AST visitor that builds a stream of {@link Op}s to format from the given {@link CompilationUnitTree}. */
 public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {

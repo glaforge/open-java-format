@@ -16,10 +16,10 @@
 
 package com.palantir.javaformat.doc;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
-import javax.annotation.CheckReturnValue;
 
 /**
  * These classes exist purely for observing the operation of {@link Doc#computeBreaks}, including all the alternative

@@ -28,7 +28,7 @@ dependencies {
     compileOnly libs.eclipse.text
 
     implementation project(':open-java-format')
-    implementation libs.jsr305
+    implementation libs.jspecify
 }
 
 // The dependencies embedded in the plugin jar. Named once, so the manifest can list exactly what

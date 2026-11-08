@@ -23,8 +23,8 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.project.Project;
 import com.palantir.javaformat.java.FormatterService;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -48,8 +48,8 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
         return project.getService(PalantirJavaFormatSettings.class);
     }
 
-    @Nullable
     @Override
+    @Nullable
     public StoredSettings getState() {
         return state;
     }

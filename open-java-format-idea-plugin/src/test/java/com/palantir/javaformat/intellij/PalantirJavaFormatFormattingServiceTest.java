@@ -36,7 +36,6 @@ import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.JavaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
 import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.StoredSettings;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +101,6 @@ final class PalantirJavaFormatFormattingServiceTest {
         return fixture.getProject();
     }
 
-    @NotNull
     protected LightProjectDescriptor getProjectDescriptor() {
         return new DefaultLightProjectDescriptor() {
             @Override
