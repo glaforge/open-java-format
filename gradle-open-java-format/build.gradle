@@ -117,8 +117,9 @@ tasks.register("copyNativeImage", Copy.class) {
     into("$buildDir/nativeImage")
 }
 
-// Split in two so the jar build does not need a GraalVM image: every test reads
-// impl.classpath, only the four that drive the binary read nativeImage.path.
+// Split in two so the jar build does not need a GraalVM image: the tests that declare the
+// formatter themselves read impl.classpath, which is also what bundleFormatter puts inside the
+// plugin; only the ones that drive the binary read nativeImage.path.
 //
 // Everything the doLast bodies touch is captured here, at configuration time: reaching for
 // `configurations` or `tasks` from inside them would pull the whole script into the task and
