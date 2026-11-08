@@ -18,7 +18,6 @@ package com.palantir.javaformat.gradle;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.palantir.javaformat.gradle.testing.GradleTestProject;
-import java.io.File;
 import java.nio.file.Path;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.TaskOutcome;
@@ -33,15 +32,20 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ValueSource(booleans = {true, false})
 final class SpotlessExcludesTest {
 
-    // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
-    private static final String CLASSPATH_FILE =
-            new File("build/impl.classpath").getAbsolutePath().replace('\\', '/');
-
     private static final String SOURCE_FILE = """
         package test;
         import java.lang.Void;
         public class Test { Void test() { return null; } }
         """;
+
+    /**
+     * Formatted next to a file in an excluded directory. If it stays as it is, the formatter did not run, and the
+     * excluded file staying as it is proves nothing.
+     */
+    private static final String MAIN_JAVA = "src/main/java/Main.java";
+
+    private static final String UNFORMATTED_MAIN = "class Main {\n        int x;\n}\n";
+    private static final String FORMATTED_MAIN = "class Main {\n    int x;\n}\n";
 
     @Parameter
     private boolean configurationCache;
@@ -56,12 +60,7 @@ final class SpotlessExcludesTest {
         project = new GradleTestProject(projectDir)
                 .configurationCache(configurationCache)
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
-                .withJavacInternalExports()
-                .buildGradle("""
-                    dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                    }
-                    """, CLASSPATH_FILE);
+                .withJavacInternalExports();
     }
 
     @ParameterizedTest
@@ -81,12 +80,16 @@ final class SpotlessExcludesTest {
                     java { srcDir '%s' }
                 }
             }
-            """, srcDir).writeFile(srcDir + "/test/Test.java", SOURCE_FILE);
+            """, srcDir)
+                .writeFile(srcDir + "/test/Test.java", SOURCE_FILE)
+                .writeFile(MAIN_JAVA, UNFORMATTED_MAIN);
 
-        BuildResult result = project.succeeds("spotlessJavaCheck");
+        BuildResult result = project.succeeds("spotlessApply");
 
         assertThat(result.task(":spotlessJava")).isNotNull().extracting(task -> task.getOutcome())
                 .isEqualTo(TaskOutcome.SUCCESS);
+        assertThat(project.readFile(srcDir + "/test/Test.java")).isEqualTo(SOURCE_FILE);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED_MAIN);
     }
 
     @ParameterizedTest
@@ -108,5 +111,10 @@ final class SpotlessExcludesTest {
 
         assertThat(result.task(":spotlessJava")).isNotNull().extracting(task -> task.getOutcome())
                 .isEqualTo(TaskOutcome.SUCCESS);
+        // A formatter that fails reports a lint error instead, which fails the check just as well.
+        assertThat(result.getOutput())
+                .contains("format violations")
+                .contains("Test.java")
+                .doesNotContain("lint error");
     }
 }

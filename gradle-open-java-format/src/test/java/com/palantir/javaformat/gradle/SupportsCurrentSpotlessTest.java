@@ -16,7 +16,6 @@
 package com.palantir.javaformat.gradle;
 
 import com.palantir.javaformat.gradle.testing.GradleTestProject;
-import java.io.File;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,10 +32,6 @@ import org.junit.jupiter.api.io.TempDir;
  */
 final class SupportsCurrentSpotlessTest {
 
-    // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
-    private static final String CLASSPATH_FILE =
-            new File("build/impl.classpath").getAbsolutePath().replace('\\', '/');
-
     @TempDir
     private Path projectDir;
 
@@ -47,14 +42,10 @@ final class SupportsCurrentSpotlessTest {
                 .plugins("java", "dev.openjavaformat.java-format", "com.diffplug.spotless")
                 .withJavacInternalExports()
                 .buildGradle("""
-                    dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                    }
-
                     // Forces realization of the spotlessJava task, creating the spotless steps. Any
                     // configuration resolved eagerly in them fails the configuration cache here.
                     project.getTasks().getByName("spotlessJava")
-                    """, CLASSPATH_FILE)
+                    """)
                 .succeeds("classes", "--info");
     }
 }

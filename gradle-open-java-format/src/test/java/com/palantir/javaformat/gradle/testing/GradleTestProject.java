@@ -25,11 +25,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 
@@ -57,10 +60,14 @@ public final class GradleTestProject {
 
     private final Path projectDir;
     private final Set<String> plugins = new LinkedHashSet<>();
+    private final Set<String> pluginsNotApplied = new LinkedHashSet<>();
+    private final Set<String> subprojects = new LinkedHashSet<>();
     private final StringBuilder buildGradle = new StringBuilder();
     private final StringBuilder gradleProperties = new StringBuilder();
     private boolean configurationCache = true;
     private boolean spotlessOnClasspath = true;
+    private boolean repositories = true;
+    private Optional<Path> buildCacheDir = Optional.empty();
 
     public GradleTestProject(Path projectDir) {
         this.projectDir = projectDir;
@@ -72,6 +79,21 @@ public final class GradleTestProject {
 
     public GradleTestProject plugins(String... ids) {
         plugins.addAll(Arrays.asList(ids));
+        return this;
+    }
+
+    /**
+     * Declares these plugins in the plugins block with {@code apply false}, as a multi-project build does: on the build's
+     * classpath, for the subprojects to apply.
+     */
+    public GradleTestProject pluginsNotApplied(String... ids) {
+        pluginsNotApplied.addAll(Arrays.asList(ids));
+        return this;
+    }
+
+    /** Includes these subprojects, in directories of their names. A test writes their files with {@link #writeFile}. */
+    public GradleTestProject subprojects(String... names) {
+        subprojects.addAll(Arrays.asList(names));
         return this;
     }
 
@@ -110,6 +132,21 @@ public final class GradleTestProject {
     }
 
     /**
+     * Runs the builds with the build cache, kept in {@code directory}. Not the default local cache: TestKit builds share
+     * one Gradle user home, and with it that cache, so a test would read what another test stored.
+     */
+    public GradleTestProject withBuildCache(Path directory) {
+        this.buildCacheDir = Optional.of(directory);
+        return this;
+    }
+
+    /** Leaves out the root project's {@code repositories { mavenCentral() } }: the build declares no repository at all. */
+    public GradleTestProject withoutRepositories() {
+        this.repositories = false;
+        return this;
+    }
+
+    /**
      * Leaves the Spotless jars out of the classpath injected next to the plugin under test. build.gradle puts them there
      * so that generated projects can apply Spotless, which gives every other test Spotless classes whether it applies
      * Spotless or not — unlike a real project that never does.
@@ -130,6 +167,22 @@ public final class GradleTestProject {
             Files.writeString(target, content, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not write " + relativePath, e);
+        }
+        return this;
+    }
+
+    /** Deletes a file, or a directory with everything in it, if it is there. */
+    public GradleTestProject delete(String relativePath) {
+        Path target = file(relativePath);
+        if (!Files.exists(target)) {
+            return this;
+        }
+        try (Stream<Path> paths = Files.walk(target)) {
+            for (var path : paths.sorted(Comparator.reverseOrder()).toList()) {
+                Files.delete(path);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not delete " + relativePath, e);
         }
         return this;
     }
@@ -158,6 +211,9 @@ public final class GradleTestProject {
         // Every build looks at the files afresh. A test changes files between two builds faster than file system
         // watching reports it, and the second build then took a deleted output for one still there.
         allArguments.add("--no-watch-fs");
+        if (buildCacheDir.isPresent()) {
+            allArguments.add("--build-cache");
+        }
         GradleRunner runner = GradleRunner.create()
                 .withProjectDir(projectDir.toFile())
                 .withGradleVersion(GRADLE_VERSION)
@@ -184,9 +240,41 @@ public final class GradleTestProject {
     private void write() {
         StringBuilder script = new StringBuilder("plugins {\n");
         plugins.forEach(id -> script.append("    id '").append(id).append("'\n"));
-        script.append("}\n\nrepositories {\n    mavenCentral()\n}\n\n").append(buildGradle);
+        pluginsNotApplied.forEach(id -> script.append("    id '").append(id).append("' apply false\n"));
+        script.append("}\n\n");
+        if (repositories) {
+            script.append("repositories {\n    mavenCentral()\n}\n\n");
+        }
+        // Spotless checks for, and writes, the platform's line endings by default, CRLF on Windows, while the tests
+        // write their files with LF: a check would report the line endings, not the formatting. PRESERVE keeps the
+        // file's own, wherever a test applies Spotless.
+        script.append("""
+            allprojects {
+                plugins.withId('com.diffplug.spotless') {
+                    spotless {
+                        lineEndings = 'PRESERVE'
+                    }
+                }
+            }
 
-        writeFile("settings.gradle", "rootProject.name = 'test-project'\n");
+            """);
+        script.append(buildGradle);
+
+        StringBuilder settings = new StringBuilder("rootProject.name = 'test-project'\n");
+        for (var name : subprojects) {
+            settings.append("include '").append(name).append("'\n");
+            // Gradle refuses a project whose directory is missing.
+            try {
+                Files.createDirectories(file(name));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Could not create " + name, e);
+            }
+        }
+        // Forward slashes: the path goes into a Groovy string, where a Windows backslash would start an escape.
+        buildCacheDir.ifPresent(dir -> settings.append("\nbuildCache {\n    local {\n        directory = file('")
+                .append(dir.toAbsolutePath().toString().replace('\\', '/'))
+                .append("')\n    }\n}\n"));
+        writeFile("settings.gradle", settings.toString());
         writeFile("build.gradle", script.toString());
         writeFile("gradle.properties", gradleProperties.toString());
     }
