@@ -49,6 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Removes unused imports from a source file. Imports that are only used in javadoc are also removed, and the references
@@ -76,7 +77,7 @@ public class RemoveUnusedImports {
 
         private final Set<String> usedNames = new LinkedHashSet<>();
 
-        private final Multimap<String, Range<Integer>> usedInJavadoc = HashMultimap.create();
+        private final Multimap<String, @Nullable Range<Integer>> usedInJavadoc = HashMultimap.create();
 
         final JavacTrees trees;
         final DocTreeScanner docTreeSymbolScanner;
@@ -115,8 +116,10 @@ public class RemoveUnusedImports {
             return super.visitCase(tree, null);
         }
 
+        @Nullable
         private static final Method CASE_TREE_GET_LABELS = caseTreeGetLabels();
 
+        @Nullable
         private static Method caseTreeGetLabels() {
             try {
                 return CaseTree.class.getMethod("getLabels");
@@ -126,7 +129,7 @@ public class RemoveUnusedImports {
         }
 
         @Override
-        public Void scan(Tree tree, Void unused) {
+        public Void scan(@Nullable Tree tree, Void unused) {
             if (tree == null) {
                 return null;
             }
@@ -219,7 +222,7 @@ public class RemoveUnusedImports {
             String contents,
             JCCompilationUnit unit,
             Set<String> usedNames,
-            Multimap<String, Range<Integer>> usedInJavadoc) {
+            Multimap<String, @Nullable Range<Integer>> usedInJavadoc) {
         RangeMap<Integer, String> replacements = TreeRangeMap.create();
         String sep = Newlines.guessLineSeparator(contents);
         // From JDK 23 on, getImports() also returns JCModuleImport, which is not a JCImport, so iterate
@@ -293,6 +296,7 @@ public class RemoveUnusedImports {
 
     // ImportTree#isModule() (JEP 511) exists from JDK 23 on; this module compiles with a JDK 21
     // compiler, so it can't be referenced directly. Same idiom as CASE_TREE_GET_LABELS above.
+    @Nullable
     private static final Method IMPORT_TREE_IS_MODULE =
             JavaInputAstVisitor.maybeGetMethod(ImportTree.class, "isModule");
 
@@ -312,7 +316,7 @@ public class RemoveUnusedImports {
     private static boolean isUnused(
             JCCompilationUnit unit,
             Set<String> usedNames,
-            Multimap<String, Range<Integer>> usedInJavadoc,
+            Multimap<String, @Nullable Range<Integer>> usedInJavadoc,
             ImportTree importTree,
             String simpleName) {
         if (isModuleImport(importTree)) {
@@ -354,7 +358,7 @@ public class RemoveUnusedImports {
     }
 
     private static boolean isUsed(
-            Set<String> usedNames, Multimap<String, Range<Integer>> usedInJavadoc, String simpleName) {
+            Set<String> usedNames, Multimap<String, @Nullable Range<Integer>> usedInJavadoc, String simpleName) {
         return usedNames.contains(simpleName) || usedInJavadoc.containsKey(simpleName);
     }
 

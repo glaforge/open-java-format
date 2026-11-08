@@ -543,7 +543,7 @@ final class JavadocLexer {
             if (last.length() > 1) {
                 saved.addLast(new Token(
                         LITERAL, last.getValue().substring(0, last.getValue().length() - 1)));
-                saved.addLast(new Token(FORCED_NEWLINE, null));
+                saved.addLast(new Token(FORCED_NEWLINE, "\n"));
             }
             trailingBrace = true;
         }

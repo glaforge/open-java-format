@@ -87,7 +87,7 @@ public final class BootstrappingFormatterService implements FormatterService {
                 ranges.stream().map(RangeUtils::toStringRange).collect(Collectors.toList()));
 
         Optional<String> output =
-                FormatterCommandRunner.runWithStdin(command.toArgs(), input, Optional.of(jdkPath.getParent()));
+                FormatterCommandRunner.runWithStdin(command.toArgs(), input, Optional.ofNullable(jdkPath.getParent()));
         if (output.isEmpty() || output.get().isEmpty()) {
             return ImmutableList.of();
         }

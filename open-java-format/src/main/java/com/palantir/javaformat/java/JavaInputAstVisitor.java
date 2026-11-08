@@ -14,6 +14,7 @@
 
 package com.palantir.javaformat.java;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.palantir.javaformat.Indent.If.make;
@@ -330,7 +331,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     @Override
-    public Void scan(Tree tree, Void unused) {
+    public Void scan(@Nullable Tree tree, Void unused) {
         inExpression.addLast(tree instanceof ExpressionTree || inExpression.peekLast());
         int previous = builder.depth();
         try {
@@ -984,7 +985,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                     Optional.ofNullable(fragment.getInitializer()),
                     Optional.of(";"),
                     /* receiverExpression= */ Optional.empty(),
-                    Optional.ofNullable(variableFragmentDims(true, 0, fragment.getType())));
+                    Optional.ofNullable(fragment.getType()).map(type -> variableFragmentDims(true, 0, type)));
 
         } else {
             declareMany(fragments, annotationDirection);
@@ -992,9 +993,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     private TypeWithDims variableFragmentDims(boolean first, int leadingDims, Tree type) {
-        if (type == null) {
-            return null;
-        }
         if (first) {
             return DimensionHelpers.extractDims(type, SortedDims.YES);
         }
@@ -1132,6 +1130,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     // ImportTree#isModule() (JEP 511) exists from JDK 23 on; this module compiles with a JDK 21
     // compiler, so it can't be referenced directly.
+    @Nullable
     private static final Method IMPORT_TREE_IS_MODULE = maybeGetMethod(ImportTree.class, "isModule");
 
     @Override
@@ -1467,7 +1466,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                     openedNameAndTypeScope = true;
                 }
                 scan(baseReturnType, null);
-                maybeAddDims(dims);
+                maybeAddDims(checkNotNull(dims));
             }
             if (!first) {
                 builder.breakOp(FillMode.INDEPENDENT, " ", ZERO, Optional.of(breakBeforeName));
@@ -1774,7 +1773,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return true;
     }
 
-    private JCTree.Tag unaryTag(ExpressionTree expression) {
+    private JCTree.@Nullable Tag unaryTag(ExpressionTree expression) {
         if (expression instanceof UnaryTree) {
             return ((JCTree) expression).getTag();
         }
@@ -3110,6 +3109,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return node;
     }
 
+    @Nullable
     private ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
         ExpressionTree select = methodInvocation.getMethodSelect();
         return select instanceof MemberSelectTree memberSelectTree ? memberSelectTree.getExpression() : null;
@@ -3432,7 +3432,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     private Integer actualColumn(ExpressionTree expression) {
         Map<Integer, Integer> positionToColumnMap = builder.getInput().getPositionToColumnMap();
-        return positionToColumnMap.get(builder.actualStartColumn(getStartPosition(expression)));
+        return checkNotNull(positionToColumnMap.get(builder.actualStartColumn(getStartPosition(expression))));
     }
 
     /** How many lines does this node take up in the input. Returns at least 1. */
@@ -3448,8 +3448,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         while (endPosition > startPosition && positionTokenMap.get(endPosition) == null) {
             endPosition--;
         }
-        Input.Token startToken = positionTokenMap.get(startPosition);
-        Input.Token endToken = positionTokenMap.get(endPosition);
+        Input.Token startToken = checkNotNull(positionTokenMap.get(startPosition));
+        Input.Token endToken = checkNotNull(positionTokenMap.get(endPosition));
         return lineNumberAt(endToken) - lineNumberAt(startToken) + 1;
     }
 
@@ -3493,7 +3493,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             DeclarationKind kind,
             Direction annotationsDirection,
             Optional<ModifiersTree> modifiers,
-            Tree type,
+            @Nullable Tree type,
             Name name,
             String op,
             String equals,
@@ -3521,7 +3521,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             DeclarationKind kind,
             Direction annotationsDirection,
             Optional<ModifiersTree> modifiers,
-            Tree type,
+            @Nullable Tree type,
             Name name,
             String op,
             String equals,
@@ -4005,6 +4005,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * have it. Used with {@link #invoke} to reach AST accessors that are newer than the compiler this module builds
      * with, such as {@code ImportTree#isModule()} (JDK 23).
      */
+    @Nullable
     protected static Method maybeGetMethod(Class<?> c, String name) {
         try {
             return c.getMethod(name);

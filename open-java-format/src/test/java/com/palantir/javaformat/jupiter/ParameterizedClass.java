@@ -175,7 +175,7 @@ public final class ParameterizedClass implements TestTemplateInvocationContextPr
 
         return extensionContext
                 .getStore(namespace)
-                .getOrComputeIfAbsent(
+                .computeIfAbsent(
                         "invokeUserParametersMethod", unused -> allParameters(userParametersMethod), List.class);
     }
 
@@ -205,7 +205,7 @@ public final class ParameterizedClass implements TestTemplateInvocationContextPr
     private static String findStringFormatTemplate(ExtensionContext extensionContext, Class<?> testClass) {
         return extensionContext
                 .getStore(namespace)
-                .getOrComputeIfAbsent(
+                .computeIfAbsent(
                         "findStringFormatTemplate",
                         unused -> {
                             List<Method> methods = AnnotationUtils.findAnnotatedMethods(

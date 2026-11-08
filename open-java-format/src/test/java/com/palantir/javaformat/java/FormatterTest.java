@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import javax.lang.model.element.Modifier;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -173,7 +174,8 @@ final class FormatterTest {
                 "com/palantir/javaformat/java/testimports/A.formatting-and-import-sorting");
     }
 
-    private void importOrdering(String sortArg, String outputResourceName) throws IOException, UsageException {
+    private void importOrdering(@Nullable String sortArg, String outputResourceName)
+            throws IOException, UsageException {
         Path path = testFolder.resolve("Foo.java");
 
         String inputResourceName = "com/palantir/javaformat/java/testimports/A.input";

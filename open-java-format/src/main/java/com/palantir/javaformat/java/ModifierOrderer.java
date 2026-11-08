@@ -16,6 +16,7 @@
 
 package com.palantir.javaformat.java;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getLast;
 
@@ -71,6 +72,7 @@ final class ModifierOrderer {
             return tokens.isEmpty() || modifier == null;
         }
 
+        @Nullable
         Modifier modifier() {
             return modifier;
         }
@@ -106,7 +108,7 @@ final class ModifierOrderer {
         @Override
         public int compareTo(ModifierTokens o) {
             checkState(!isEmpty()); // empty ModifierTokens are filtered out prior to sorting
-            return modifier.compareTo(o.modifier);
+            return checkNotNull(modifier).compareTo(checkNotNull(o.modifier));
         }
     }
 

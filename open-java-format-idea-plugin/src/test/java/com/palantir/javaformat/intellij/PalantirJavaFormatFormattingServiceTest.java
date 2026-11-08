@@ -48,6 +48,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class PalantirJavaFormatFormattingServiceTest {
@@ -126,10 +127,10 @@ final class PalantirJavaFormatFormattingServiceTest {
 
     private static final class DelegatingFormatter extends PalantirJavaFormatFormattingService {
         public DelegatingFormatter() {
-            this.setPluginDescriptor(FormattingService.EP_NAME
-                    .findExtension(PalantirJavaFormatFormattingService.class)
-                    .getPluginDescriptor()
-                    .orElseThrow());
+            this.setPluginDescriptor(
+                    requireNonNull(FormattingService.EP_NAME.findExtension(PalantirJavaFormatFormattingService.class))
+                            .getPluginDescriptor()
+                            .orElseThrow());
         }
 
         private boolean invoked = false;
@@ -140,7 +141,7 @@ final class PalantirJavaFormatFormattingServiceTest {
 
         @Override
         protected FormattingTask createFormattingTask(AsyncFormattingRequest request) {
-            FormattingTask delegateTask = super.createFormattingTask(request);
+            FormattingTask delegateTask = requireNonNull(super.createFormattingTask(request));
             return new FormattingTask() {
                 @Override
                 public boolean cancel() {

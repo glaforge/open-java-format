@@ -65,6 +65,7 @@ class PalantirJavaFormatFormattingService extends AsyncDocumentFormattingService
     }
 
     @Override
+    @Nullable
     protected FormattingTask createFormattingTask(AsyncFormattingRequest request) {
         Project project = request.getContext().getProject();
         // The marketplace verifier reports this class as experimental, and newer IDEs also deprecate it. It stays:

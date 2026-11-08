@@ -21,6 +21,9 @@ tasks.withType(JavaCompile).configureEach {
     options.errorprone {
         // Annotation processor output (Immutables) is not ours to fix.
         excludedPaths = '.*/build/generated/.*'
+        nullaway {
+            handleTestAssertionLibraries = true
+        }
         error('FormatStringConcatenation')
         error('JUnitClassModifiers')
         error('JUnitMethodDeclaration')

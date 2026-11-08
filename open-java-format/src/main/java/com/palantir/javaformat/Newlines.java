@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import org.jspecify.annotations.Nullable;
 
 /** Platform-independent newline handling. */
 public class Newlines {
@@ -53,6 +54,7 @@ public class Newlines {
     }
 
     /** Returns the terminating line break in the input, or {@code null} if the input does not end in a break. */
+    @Nullable
     public static String getLineEnding(String input) {
         for (String b : BREAKS) {
             if (input.endsWith(b)) {
@@ -154,7 +156,6 @@ public class Newlines {
     private static final class LineIterator implements Iterator<String> {
 
         int idx;
-        String curr;
 
         private final String input;
         private final Iterator<Integer> indices;
@@ -165,7 +166,7 @@ public class Newlines {
             idx = indices.next(); // read leading 0
         }
 
-        private void advance() {
+        private String advance() {
             int last = idx;
             if (indices.hasNext()) {
                 idx = indices.next();
@@ -175,7 +176,7 @@ public class Newlines {
             } else {
                 throw new NoSuchElementException();
             }
-            curr = input.substring(last, idx);
+            return input.substring(last, idx);
         }
 
         @Override
@@ -185,8 +186,7 @@ public class Newlines {
 
         @Override
         public String next() {
-            advance();
-            return curr;
+            return advance();
         }
 
         @Override

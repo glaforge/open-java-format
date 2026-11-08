@@ -49,7 +49,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
     }
 
     @Override
-    @Nullable
     public StoredSettings getState() {
         return state;
     }
@@ -164,6 +163,7 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
                     .map(strings -> strings.stream().map(URI::create).collect(Collectors.toList()));
         }
 
+        @Nullable
         public List<String> getImplementationClassPath() {
             return implementationClassPath
                     .map(paths -> paths.stream().map(URI::toString).collect(Collectors.toList()))
@@ -181,6 +181,7 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
             }
         }
 
+        @Nullable
         public String getEnabled() {
             return switch (enabled) {
                 case ENABLED -> "true";

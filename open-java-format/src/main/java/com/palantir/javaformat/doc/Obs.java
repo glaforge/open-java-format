@@ -20,6 +20,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 
 /**
  * These classes exist purely for observing the operation of {@link Doc#computeBreaks}, including all the alternative
@@ -170,7 +171,7 @@ public final class Obs {
         private final Optional<Level> parentLevel;
 
         public ExplorationNodeImpl(
-                LevelNodeImpl parent,
+                @Nullable LevelNodeImpl parent,
                 String humanDescription,
                 Sink sink,
                 int startColumn,

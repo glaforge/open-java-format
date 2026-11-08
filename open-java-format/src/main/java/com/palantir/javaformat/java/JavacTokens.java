@@ -28,6 +28,7 @@ import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.parser.UnicodeReader;
 import com.sun.tools.javac.util.Context;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /** A wrapper around javac's lexer. */
 class JavacTokens {
@@ -38,12 +39,16 @@ class JavacTokens {
 
     /** An unprocessed input token, including whitespace and comments. */
     static class RawTok {
+        @Nullable
         private final String stringVal;
+
+        @Nullable
         private final TokenKind kind;
+
         private final int pos;
         private final int endPos;
 
-        RawTok(String stringVal, TokenKind kind, int pos, int endPos) {
+        RawTok(@Nullable String stringVal, @Nullable TokenKind kind, int pos, int endPos) {
             this.stringVal = stringVal;
             this.kind = kind;
             this.pos = pos;
@@ -51,6 +56,7 @@ class JavacTokens {
         }
 
         /** The token kind, or {@code null} for whitespace and comments. */
+        @Nullable
         public TokenKind kind() {
             return kind;
         }
@@ -66,6 +72,7 @@ class JavacTokens {
         }
 
         /** The escaped string value of a literal, or {@code null} for other tokens. */
+        @Nullable
         public String stringVal() {
             return stringVal;
         }
@@ -154,6 +161,7 @@ class JavacTokens {
         private final AccessibleReader reader;
         private final CommentStyle style;
 
+        @Nullable
         private String text = null;
 
         public CommentWithTextAndPosition(int pos, int endPos, AccessibleReader reader, CommentStyle style) {

@@ -14,6 +14,7 @@
 
 package com.palantir.javaformat.java;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.palantir.javaformat.java.FileBasedTests.assumeJavaVersionForTest;
 import static com.palantir.javaformat.java.FileBasedTests.isRecreate;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,13 +44,16 @@ public class FormatterIntegrationTest {
     private final String name;
     private final String input;
     private final String expected;
-    private final String separator;
 
     public FormatterIntegrationTest(String name, String input, String expected) {
         this.name = name;
         this.input = input;
         this.expected = expected;
-        this.separator = isRecreate() ? null : Newlines.getLineEnding(expected);
+    }
+
+    /** The line separator of the expected output, which the idempotency tests replace with each of the others. */
+    private String separator() {
+        return checkNotNull(Newlines.getLineEnding(expected));
     }
 
     /**
@@ -98,7 +102,7 @@ public class FormatterIntegrationTest {
         assumeJavaVersionForTest(name);
         Assumptions.assumeFalse(isRecreate(), "Not running when recreating test outputs");
         try {
-            String mangled = expected.replace(separator, "\n");
+            String mangled = expected.replace(separator(), "\n");
             String output = createFormatter().formatSource(mangled);
             assertThat(output).describedAs("bad output for %s", name).isEqualTo(mangled);
         } catch (FormatterException e) {
@@ -111,7 +115,7 @@ public class FormatterIntegrationTest {
         assumeJavaVersionForTest(name);
         Assumptions.assumeFalse(isRecreate(), "Not running when recreating test outputs");
         try {
-            String mangled = expected.replace(separator, "\r");
+            String mangled = expected.replace(separator(), "\r");
             String output = createFormatter().formatSource(mangled);
             assertThat(output).describedAs("bad output for %s", name).isEqualTo(mangled);
         } catch (FormatterException e) {
@@ -124,7 +128,7 @@ public class FormatterIntegrationTest {
         assumeJavaVersionForTest(name);
         Assumptions.assumeFalse(isRecreate(), "Not running when recreating test outputs");
         try {
-            String mangled = expected.replace(separator, "\r\n");
+            String mangled = expected.replace(separator(), "\r\n");
             String output = createFormatter().formatSource(mangled);
             assertThat(output).describedAs("bad output for %s", name).isEqualTo(mangled);
         } catch (FormatterException e) {

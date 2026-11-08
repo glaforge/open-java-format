@@ -107,7 +107,7 @@ final class CommandLineOptionsParser {
         return optionsBuilder.build();
     }
 
-    private static Integer parseInteger(Iterator<String> it, String flag, String value) {
+    private static Integer parseInteger(Iterator<String> it, String flag, @Nullable String value) {
         try {
             return Integer.valueOf(getValue(flag, it, value));
         } catch (NumberFormatException e) {

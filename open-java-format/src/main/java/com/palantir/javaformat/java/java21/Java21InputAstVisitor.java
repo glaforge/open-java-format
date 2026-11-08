@@ -27,6 +27,7 @@ import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.PatternTree;
 import com.sun.source.tree.Tree;
 import javax.lang.model.element.Name;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Extends {@link Java14InputAstVisitor} with support for AST nodes that were added or modified in
@@ -42,7 +43,7 @@ public class Java21InputAstVisitor extends Java14InputAstVisitor {
     }
 
     @Override
-    public Void scan(Tree tree, Void unused) {
+    public Void scan(@Nullable Tree tree, Void unused) {
         if (tree != null && tree.getKind().name().equals(ANY_PATTERN_KIND_NAME)) {
             // No sync(tree): javac records the start position one past the `_`, which makes sync()
             // think a token was skipped and throw. This branch emits one leaf token and never recurses.

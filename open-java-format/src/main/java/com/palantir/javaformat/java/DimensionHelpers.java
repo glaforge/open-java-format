@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities for working with array dimensions.
@@ -38,10 +39,12 @@ class DimensionHelpers {
 
     /** The array dimension specifiers (including any type annotations) associated with a type. */
     static class TypeWithDims {
+        @Nullable
         final Tree node;
+
         final ImmutableList<List<AnnotationTree>> dims;
 
-        public TypeWithDims(Tree node, ImmutableList<List<AnnotationTree>> dims) {
+        public TypeWithDims(@Nullable Tree node, ImmutableList<List<AnnotationTree>> dims) {
             this.node = node;
             this.dims = dims;
         }
