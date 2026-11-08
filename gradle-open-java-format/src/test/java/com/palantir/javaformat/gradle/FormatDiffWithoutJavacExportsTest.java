@@ -18,7 +18,6 @@ package com.palantir.javaformat.gradle;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.palantir.javaformat.gradle.testing.GradleTestProject;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.gradle.testkit.runner.BuildResult;
@@ -37,10 +36,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ValueSource(booleans = {true, false})
 final class FormatDiffWithoutJavacExportsTest {
 
-    /** ./gradlew writeImplClasspath generates this file. Forward slashes: the path goes into a Groovy string. */
-    private static final String CLASSPATH_FILE =
-            new File("build/impl.classpath").getAbsolutePath().replace('\\', '/');
-
     private static final String MAIN_JAVA = "src/main/java/Main.java";
 
     @Parameter
@@ -54,12 +49,7 @@ final class FormatDiffWithoutJavacExportsTest {
             throws IOException, InterruptedException {
         GradleTestProject project = new GradleTestProject(projectDir)
                 .configurationCache(configurationCache)
-                .plugins("java", "dev.openjavaformat.java-format")
-                .buildGradle("""
-                    dependencies {
-                        palantirJavaFormat files(file("%s").text.split(File.pathSeparator))
-                    }
-                    """, CLASSPATH_FILE);
+                .plugins("java", "dev.openjavaformat.java-format");
 
         git(project, "init");
         git(project, "config", "user.name", "Foo");

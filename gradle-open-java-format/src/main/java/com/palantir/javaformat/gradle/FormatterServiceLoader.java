@@ -86,6 +86,14 @@ public final class FormatterServiceLoader {
     }
 
     /**
+     * Fails with the fix spelt out when this JVM does not export javac's internals to the formatter, without loading
+     * it. The flags export them to every unnamed module, so the plugin's own module answers for the formatter's.
+     */
+    public static void checkJavacIsExported() {
+        checkJavacIsExportedTo(FormatterServiceLoader.class.getClassLoader());
+    }
+
+    /**
      * Fails with the fix spelt out when this JVM does not export javac's internals to the formatter's class loader:
      * either the native binary, which runs outside the JVM, or the {@code --add-exports} flags on the Gradle JVM.
      */
