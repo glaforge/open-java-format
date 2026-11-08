@@ -177,8 +177,7 @@ final class MultiProjectTest {
 
     private static void assertFormatted(GradleTestProject project, String... files) {
         for (var file : files) {
-            // Spotless writes the platform's line endings, CRLF on Windows.
-            assertThat(project.readFile(file)).as(file).isEqualToNormalizingNewlines(FORMATTED);
+            assertThat(project.readFile(file)).as(file).isEqualTo(FORMATTED);
         }
     }
 

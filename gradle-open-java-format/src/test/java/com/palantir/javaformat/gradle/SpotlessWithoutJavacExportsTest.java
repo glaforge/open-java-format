@@ -75,8 +75,7 @@ final class SpotlessWithoutJavacExportsTest {
         var result = project.succeeds("spotlessApply");
 
         assertThat(spotlessJava(result)).isEqualTo(TaskOutcome.SUCCESS);
-        // Spotless writes the platform's line endings, CRLF on Windows.
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test

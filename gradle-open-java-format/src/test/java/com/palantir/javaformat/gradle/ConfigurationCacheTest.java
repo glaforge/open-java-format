@@ -79,8 +79,7 @@ final class ConfigurationCacheTest {
             project.writeFile(MAIN_JAVA, UNFORMATTED);
 
             assertThat(project.succeeds("spotlessApply").getOutput()).contains(entry);
-            // Spotless writes the platform's line endings, CRLF on Windows.
-            assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+            assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
         }
     }
 
@@ -126,7 +125,7 @@ final class ConfigurationCacheTest {
         var reused = project.succeeds("spotlessApply");
 
         assertThat(reused.getOutput()).contains(REUSED);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test
@@ -146,11 +145,11 @@ final class ConfigurationCacheTest {
         // spotlessApply of the same source each time, and the file it leaves: a step that changes nothing is up to
         // date just as well, and passes a spotlessCheck of a formatted file.
         assertThat(spotlessJava(spotlessApply(project))).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
         var unchanged = spotlessApply(project);
         assertThat(unchanged.getOutput()).contains(REUSED);
         assertThat(spotlessJava(unchanged)).isEqualTo(TaskOutcome.UP_TO_DATE);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
 
         // Spotless signs the jars by name, size and content, as another formatter version changes them. The extra jar
         // is JUnit's, not one written into projectDir: the daemon keeps the formatter's jars open after the build, and
@@ -160,7 +159,7 @@ final class ConfigurationCacheTest {
         project.writeFile("formatter.classpath", jars + File.pathSeparator + extraJar);
 
         assertThat(spotlessJava(spotlessApply(project))).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     /** spotlessApply of the unformatted source, written again: only its time changes. */

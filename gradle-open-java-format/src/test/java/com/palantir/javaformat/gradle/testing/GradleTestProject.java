@@ -245,6 +245,19 @@ public final class GradleTestProject {
         if (repositories) {
             script.append("repositories {\n    mavenCentral()\n}\n\n");
         }
+        // Spotless checks for, and writes, the platform's line endings by default, CRLF on Windows, while the tests
+        // write their files with LF: a check would report the line endings, not the formatting. PRESERVE keeps the
+        // file's own, wherever a test applies Spotless.
+        script.append("""
+            allprojects {
+                plugins.withId('com.diffplug.spotless') {
+                    spotless {
+                        lineEndings = 'PRESERVE'
+                    }
+                }
+            }
+
+            """);
         script.append(buildGradle);
 
         StringBuilder settings = new StringBuilder("rootProject.name = 'test-project'\n");

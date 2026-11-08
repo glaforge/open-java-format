@@ -67,10 +67,10 @@ final class BuildCacheTest {
     void spotlessJava_is_up_to_date_when_the_source_is_written_again_unchanged() {
         var project = project(projectDir);
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
 
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.UP_TO_DATE);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test
@@ -79,7 +79,7 @@ final class BuildCacheTest {
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
 
         assertThat(spotlessApply(project, OTHER_UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(OTHER_FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(OTHER_FORMATTED);
     }
 
     @Test
@@ -89,7 +89,7 @@ final class BuildCacheTest {
         assertThat(spotlessApply(project, OTHER_UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
 
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.FROM_CACHE);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test
@@ -100,7 +100,7 @@ final class BuildCacheTest {
         project.delete("build");
 
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.FROM_CACHE);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test
@@ -111,7 +111,7 @@ final class BuildCacheTest {
         var moved = project(otherProjectDir);
 
         assertThat(spotlessApply(moved, UNFORMATTED)).isEqualTo(TaskOutcome.FROM_CACHE);
-        assertThat(moved.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(moved.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test
@@ -123,7 +123,7 @@ final class BuildCacheTest {
         project.writeFile("formatter.classpath", formatterClasspath()).delete("build");
 
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     @Test
@@ -140,7 +140,7 @@ final class BuildCacheTest {
                 .delete("build");
 
         assertThat(spotlessApply(project, UNFORMATTED)).isEqualTo(TaskOutcome.SUCCESS);
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED);
     }
 
     /** The formatter inside the plugin, unless the test writes formatter.classpath, which the build then declares. */

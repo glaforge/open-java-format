@@ -89,8 +89,7 @@ final class SpotlessExcludesTest {
         assertThat(result.task(":spotlessJava")).isNotNull().extracting(task -> task.getOutcome())
                 .isEqualTo(TaskOutcome.SUCCESS);
         assertThat(project.readFile(srcDir + "/test/Test.java")).isEqualTo(SOURCE_FILE);
-        // Spotless writes the platform's line endings, CRLF on Windows.
-        assertThat(project.readFile(MAIN_JAVA)).isEqualToNormalizingNewlines(FORMATTED_MAIN);
+        assertThat(project.readFile(MAIN_JAVA)).isEqualTo(FORMATTED_MAIN);
     }
 
     @ParameterizedTest
