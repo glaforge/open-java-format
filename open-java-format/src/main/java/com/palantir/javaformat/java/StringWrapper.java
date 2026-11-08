@@ -130,7 +130,6 @@ public final class StringWrapper {
         return result;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private static ImmutableSet<Range<Integer>> rangesAfterAppliedReplacements(
             TreeRangeMap<Integer, String> replacements) {
         ImmutableSet.Builder<Range<Integer>> outputRanges = ImmutableSet.builder();
@@ -482,7 +481,6 @@ public final class StringWrapper {
                 int firstLineColumn,
                 List<String> plain) {}
 
-        @SuppressWarnings("for-rollout:NullAway")
         private void wrapLongStrings(
                 TreeRangeMap<Integer, String> replacements,
                 List<TreePath> longStringLiterals,
@@ -516,7 +514,6 @@ public final class StringWrapper {
 
                 // Handling leaving trailing non-string tokens at the end of the literal,
                 // e.g. the trailing `);` in `foo("...");`.
-                @SuppressWarnings("for-rollout:NullAway")
                 int end = getEndPosition(unit, getLast(flat));
                 int lineEnd = end;
                 while (Newlines.hasNewlineAt(input, lineEnd) == -1) {

@@ -127,7 +127,6 @@ final class PalantirJavaFormatFormattingServiceTest {
     }
 
     private static final class DelegatingFormatter extends PalantirJavaFormatFormattingService {
-        @SuppressWarnings("DataFlowIssue")
         public DelegatingFormatter() {
             this.setPluginDescriptor(FormattingService.EP_NAME
                     .findExtension(PalantirJavaFormatFormattingService.class)

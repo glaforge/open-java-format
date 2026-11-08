@@ -991,7 +991,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private TypeWithDims variableFragmentDims(boolean first, int leadingDims, Tree type) {
         if (type == null) {
             return null;
@@ -1004,7 +1003,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 null, leadingDims > 0 ? dims.dims.subList(0, dims.dims.size() - leadingDims) : dims.dims);
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Void visitForLoop(ForLoopTree node, Void unused) {
         sync(node);
@@ -1406,7 +1404,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 && (classDecl.mods.flags & IMPLICIT_CLASS) == IMPLICIT_CLASS;
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Void visitMethod(MethodTree node, Void unused) {
         sync(node);
@@ -1649,7 +1646,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 .collect(toList());
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static <T> Stream<Long> indexes(Stream<T> stream, Predicate<T> predicate) {
         return Streams.mapWithIndex(stream, (x, i) -> predicate.apply(x) ? i : -1)
                 .filter(x -> x != -1);
@@ -1825,7 +1821,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     // TODO(cushon): is this worth special-casing?
-    @SuppressWarnings("for-rollout:NullAway")
     boolean visitSingleMemberAnnotation(AnnotationTree node) {
         if (node.getArguments().size() != 1) {
             return false;
@@ -1851,7 +1846,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return true;
     }
 
-    @SuppressWarnings("for-rollout:deprecation")
     @Override
     public Void visitCase(CaseTree node, Void unused) {
         sync(node);
@@ -2204,7 +2198,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     protected void visitStatements(List<? extends StatementTree> statements, boolean inlineFirst) {
         boolean first = true;
         PeekingIterator<StatementTree> it = Iterators.peekingIterator(statements.iterator());
@@ -2219,7 +2212,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             }
             markForPartialFormat();
             first = false;
-            @SuppressWarnings("for-rollout:NullAway")
             List<VariableTree> fragments = variableFragments(it, tree);
             if (!fragments.isEmpty()) {
                 visitVariables(
@@ -2944,7 +2936,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     //             .happens())
     //     .thenReturn(result);
     //
-    @SuppressWarnings("for-rollout:NullAway")
     private boolean fillFirstArgument(ExpressionTree e, List<ExpressionTree> items, Indent indent) {
         // is there a trailing dereference?
         if (items.size() < 2) {
@@ -2984,7 +2975,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     private void visitDotWithPrefix(
             List<ExpressionTree> items, boolean needDot, Collection<Integer> prefixes, FillMode prefixFillMode) {
         // Are there method invocations or field accesses after the prefix?
-        @SuppressWarnings("for-rollout:NullAway")
         boolean trailingDereferences = !prefixes.isEmpty() && getLast(prefixes) < items.size() - 1;
 
         boolean hasMethodInvocations = items.stream().anyMatch(expr -> expr instanceof MethodInvocationTree);
@@ -3120,7 +3110,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return node;
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private ExpressionTree getMethodReceiver(MethodInvocationTree methodInvocation) {
         ExpressionTree select = methodInvocation.getMethodSelect();
         return select instanceof MemberSelectTree memberSelectTree ? memberSelectTree.getExpression() : null;
@@ -3364,14 +3353,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     /** Returns the number of columns if the arguments arg laid out in a grid, or else {@code -1}. */
-    @SuppressWarnings("for-rollout:NullAway")
     private int argumentsAreTabular(List<? extends ExpressionTree> arguments) {
         if (arguments.isEmpty()) {
             return -1;
         }
         List<List<ExpressionTree>> rows = new ArrayList<>();
         PeekingIterator<ExpressionTree> it = Iterators.peekingIterator(arguments.iterator());
-        @SuppressWarnings("for-rollout:NullAway")
         int start0 = actualColumn(it.peek());
         {
             List<ExpressionTree> row = new ArrayList<>();
@@ -3389,7 +3376,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         }
         while (it.hasNext()) {
             List<ExpressionTree> row = new ArrayList<>();
-            @SuppressWarnings("for-rollout:NullAway")
             int start = actualColumn(it.peek());
             if (start != start0) {
                 return -1;
@@ -3444,14 +3430,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return size;
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private Integer actualColumn(ExpressionTree expression) {
         Map<Integer, Integer> positionToColumnMap = builder.getInput().getPositionToColumnMap();
         return positionToColumnMap.get(builder.actualStartColumn(getStartPosition(expression)));
     }
 
     /** How many lines does this node take up in the input. Returns at least 1. */
-    @SuppressWarnings("for-rollout:NullAway")
     int lineSpan(Tree node) {
         ImmutableRangeMap<Integer, ? extends Input.Token> positionTokenMap =
                 builder.getInput().getPositionTokenMap();
@@ -3505,7 +3489,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     /** Declare one variable or variable-like thing. */
-    @SuppressWarnings("TooManyArguments")
     int declareOne(
             DeclarationKind kind,
             Direction annotationsDirection,
@@ -3534,7 +3517,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
     }
 
     /** Declare one variable or variable-like thing. */
-    @SuppressWarnings("TooManyArguments")
     int declareOne(
             DeclarationKind kind,
             Direction annotationsDirection,
@@ -3792,7 +3774,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * class/interface/enum bodies (indented by {@link #plusTwo}) and for the bare top-level member list of a
      * compact source file (JEP 512), which is indented by {@link Indent.Const#ZERO}.
      */
-    @SuppressWarnings("for-rollout:NullAway")
     private void addBodyDeclarations(
             List<? extends Tree> bodyDeclarations,
             BracesOrNot braces,
@@ -3931,7 +3912,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             return false;
         }
         Tree lastNode = getLast(nodes);
-        @SuppressWarnings("for-rollout:NullAway")
         Optional<? extends Input.Token> nextToken = getNextToken(input, getEndPosition(lastNode, getCurrentPath()));
         return nextToken.isPresent() && nextToken.get().getTok().getText().equals(token);
     }
@@ -4025,7 +4005,6 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * have it. Used with {@link #invoke} to reach AST accessors that are newer than the compiler this module builds
      * with, such as {@code ImportTree#isModule()} (JDK 23).
      */
-    @SuppressWarnings("for-rollout:NullAway")
     protected static Method maybeGetMethod(Class<?> c, String name) {
         try {
             return c.getMethod(name);

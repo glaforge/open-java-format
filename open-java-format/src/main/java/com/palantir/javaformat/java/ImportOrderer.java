@@ -93,7 +93,6 @@ public final class ImportOrderer {
         tail.add(CharMatcher.whitespace().trimLeadingFrom(tokString(afterLastImport, toks.size())));
         if (!toks.isEmpty()) {
             Tok lastTok = getLast(toks);
-            @SuppressWarnings("for-rollout:NullAway")
             int tailStart = lastTok.getPosition() + lastTok.length();
             tail.add(text.substring(tailStart));
         }

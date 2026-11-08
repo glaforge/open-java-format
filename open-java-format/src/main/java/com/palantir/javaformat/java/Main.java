@@ -129,7 +129,6 @@ public final class Main {
         }
     }
 
-    @SuppressWarnings("for-rollout:RedundantControlFlow")
     private int formatFiles(
             CommandLineOptions parameters, JavaFormatterOptions options, ExecutorService executorService) {
         Map<Path, String> inputs = new LinkedHashMap<>();

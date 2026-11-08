@@ -47,12 +47,10 @@ public final class NativePalantirJavaFormatStep {
 
         // Kept for state serialization purposes.
         // For more details, see PalantirJavaFormatStep.State#jarSignature
-        @SuppressWarnings({"unused", "FieldCanBeLocal"})
         private FileSignature execSignature;
 
         private final transient Supplier<File> execSupplier;
 
-        @SuppressWarnings("for-rollout:NullAway")
         State(Supplier<File> supplier) {
             this.execSupplier = supplier;
         }

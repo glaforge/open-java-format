@@ -86,7 +86,6 @@ public final class BootstrappingFormatterService implements FormatterService {
                 /* outputReplacements= */ true,
                 ranges.stream().map(RangeUtils::toStringRange).collect(Collectors.toList()));
 
-        @SuppressWarnings("for-rollout:NullAway")
         Optional<String> output =
                 FormatterCommandRunner.runWithStdin(command.toArgs(), input, Optional.of(jdkPath.getParent()));
         if (output.isEmpty() || output.get().isEmpty()) {

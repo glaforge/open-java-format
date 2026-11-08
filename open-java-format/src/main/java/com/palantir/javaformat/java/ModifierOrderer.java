@@ -71,7 +71,6 @@ final class ModifierOrderer {
             return tokens.isEmpty() || modifier == null;
         }
 
-        @SuppressWarnings("for-rollout:NullAway")
         Modifier modifier() {
             return modifier;
         }
@@ -105,7 +104,6 @@ final class ModifierOrderer {
         }
 
         @Override
-        @SuppressWarnings("for-rollout:NullAway")
         public int compareTo(ModifierTokens o) {
             checkState(!isEmpty()); // empty ModifierTokens are filtered out prior to sorting
             return modifier.compareTo(o.modifier);
@@ -209,7 +207,6 @@ final class ModifierOrderer {
      * Returns the given token as a {@link javax.lang.model.element.Modifier}, or {@code null} if it is not a modifier.
      */
     @Nullable
-    @SuppressWarnings("for-rollout:NullAway")
     private static Modifier asModifier(Token token) {
         TokenKind kind = ((JavaInput.Tok) token.getTok()).kind();
         if (kind != null) {

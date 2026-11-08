@@ -51,7 +51,6 @@ import javax.lang.model.element.Name;
 /**
  * Extends {@link JavaInputAstVisitor} with support for AST nodes that were added or modified for Java 14.
  */
-@SuppressWarnings("Since15")
 public class Java14InputAstVisitor extends JavaInputAstVisitor {
     private static final Method COMPILATION_UNIT_TREE_GET_MODULE =
             maybeGetMethod(CompilationUnitTree.class, "getModule");
@@ -94,7 +93,6 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         }
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Void visitBindingPattern(BindingPatternTree node, Void unused) {
         sync(node);
@@ -252,7 +250,6 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         return null;
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Void visitCase(CaseTree node, Void unused) {
         sync(node);
@@ -347,7 +344,6 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         return null;
     }
 
-    @SuppressWarnings({"NullableProblems", "for-rollout:NullAway"})
     protected ExpressionTree getGuard(final CaseTree node) {
         return null;
     }

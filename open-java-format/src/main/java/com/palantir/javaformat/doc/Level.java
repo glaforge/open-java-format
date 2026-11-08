@@ -402,7 +402,6 @@ public final class Level extends Doc {
                 commentsHelper, maxWidth, newState, memoizedSplitsBreaks.get(), explorationNode));
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private Optional<State> tryBreakLastLevel(
             CommentsHelper commentsHelper,
             int maxWidth,
@@ -429,7 +428,6 @@ public final class Level extends Doc {
     /** A call of {@link #tryBreakLastLevel}, by everything besides this level that decides its outcome. */
     private record LastLevelAttempt(int maxWidth, boolean isSimpleInliningSoFar, State.LayoutInputs inputs) {}
 
-    @SuppressWarnings("for-rollout:NullAway")
     private Optional<State> tryInlineSuffix(
             CommentsHelper commentsHelper,
             int maxWidth,
@@ -549,7 +547,6 @@ public final class Level extends Doc {
                 .markAccepted());
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static Optional<State> tryBreakInnerLevel_checkInner(
             CommentsHelper commentsHelper,
             int maxWidth,

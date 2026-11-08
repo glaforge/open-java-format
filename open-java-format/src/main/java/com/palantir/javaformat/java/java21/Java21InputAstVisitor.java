@@ -32,7 +32,6 @@ import javax.lang.model.element.Name;
  * Extends {@link Java14InputAstVisitor} with support for AST nodes that were added or modified in
  * Java 21.
  */
-@SuppressWarnings("Since21")
 public class Java21InputAstVisitor extends Java14InputAstVisitor {
     // AnyPatternTree (the unnamed pattern `_`, JEP 456) is still a preview API on JDK 21, which this
     // module compiles with, so match it by Tree.Kind name instead of by type.

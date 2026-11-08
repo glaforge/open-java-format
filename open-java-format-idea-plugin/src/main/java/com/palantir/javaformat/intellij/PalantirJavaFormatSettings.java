@@ -37,20 +37,17 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
-@SuppressWarnings("for-rollout:SameNameButDifferent")
 @State(
         name = "PalantirJavaFormatSettings",
         storages = {@Storage("open-java-format.xml")})
 public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.State> {
 
-    @SuppressWarnings("for-rollout:SameNameButDifferent")
     private State state = new State();
 
     static PalantirJavaFormatSettings getInstance(Project project) {
         return project.getService(PalantirJavaFormatSettings.class);
     }
 
-    @SuppressWarnings("for-rollout:SameNameButDifferent")
     @Nullable
     @Override
     public State getState() {
@@ -58,7 +55,7 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
     }
 
     @Override
-    public void loadState(@SuppressWarnings("for-rollout:SameNameButDifferent") State state) {
+    public void loadState(State state) {
         this.state = state;
     }
 
@@ -167,7 +164,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
                     .map(strings -> strings.stream().map(URI::create).collect(Collectors.toList()));
         }
 
-        @SuppressWarnings("for-rollout:NullAway")
         public List<String> getImplementationClassPath() {
             return implementationClassPath
                     .map(paths -> paths.stream().map(URI::toString).collect(Collectors.toList()))
@@ -185,7 +181,6 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
             }
         }
 
-        @SuppressWarnings("for-rollout:NullAway")
         public String getEnabled() {
             return switch (enabled) {
                 case ENABLED -> "true";

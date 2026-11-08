@@ -26,8 +26,6 @@ import java.util.Objects;
 import org.immutables.value.Value;
 
 /** State for writing. */
-// Automatically suppressed to unblock enforcement in new code
-@SuppressWarnings("ImmutablesStyle")
 @Value.Immutable
 @Value.Style(overshadowImplementation = true)
 @JsonSerialize(as = ImmutableState.class)
