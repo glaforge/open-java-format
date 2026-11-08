@@ -309,8 +309,7 @@ public final class Formatter {
         input = ImportOrderer.reorderImports(input, options.style());
         input = RemoveUnusedImports.removeUnusedImports(input);
         String formatted = formatSource(input);
-        formatted = StringWrapper.wrap(options.maxLineLength(), formatted, this);
-        return formatted;
+        return StringWrapper.wrap(options.maxLineLength(), formatted, this);
     }
 
     /**

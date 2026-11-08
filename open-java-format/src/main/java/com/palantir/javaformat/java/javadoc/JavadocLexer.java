@@ -174,8 +174,7 @@ final class JavadocLexer {
         result = joinAdjacentLiteralsAndAdjacentWhitespace(result);
         result = inferParagraphTags(result);
         result = optionalizeSpacesAfterLinks(result);
-        result = deindentPreCodeBlocks(result);
-        return result;
+        return deindentPreCodeBlocks(result);
     }
 
     private Token readToken() throws LexException {
