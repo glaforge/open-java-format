@@ -428,7 +428,7 @@ public final class StringWrapper {
             }
 
             return textBlockToParent.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> parentToIndent.get(e.getValue())));
+                    .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> parentToIndent.get(e.getValue())));
         }
 
         private String computePrefixIndentation(

@@ -33,7 +33,6 @@ import static com.palantir.javaformat.java.Trees.skipParen;
 import static com.sun.source.tree.Tree.Kind.ANNOTATION;
 import static com.sun.source.tree.Tree.Kind.EXTENDS_WILDCARD;
 import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
-import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
@@ -1642,7 +1641,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                     Name name = getMethodName(methodInvocation);
                     return Stream.of("stream", "parallelStream", "toBuilder").anyMatch(name::contentEquals);
                 })
-                .collect(toList());
+                .toList();
     }
 
     private static <T> Stream<Long> indexes(Stream<T> stream, Predicate<T> predicate) {

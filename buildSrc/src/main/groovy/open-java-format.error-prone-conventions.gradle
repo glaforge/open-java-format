@@ -26,6 +26,7 @@ tasks.withType(JavaCompile).configureEach {
             handleTestAssertionLibraries = true
         }
         error('CanonicalAnnotationSyntax')
+        error('CollectorMutability')
         error('DirectReturn')
         error('FormatStringConcatenation')
         error('JUnitClassModifiers')

@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
@@ -158,13 +157,13 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
 
         public void setImplementationClassPath(@Nullable List<String> value) {
             implementationClassPath = Optional.ofNullable(value)
-                    .map(strings -> strings.stream().map(URI::create).collect(Collectors.toList()));
+                    .map(strings -> strings.stream().map(URI::create).toList());
         }
 
         @Nullable
         public List<String> getImplementationClassPath() {
             return implementationClassPath
-                    .map(paths -> paths.stream().map(URI::toString).collect(Collectors.toList()))
+                    .map(paths -> paths.stream().map(URI::toString).toList())
                     .orElse(null);
         }
 
