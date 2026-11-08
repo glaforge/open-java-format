@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** {@code JavaCommentsHelper} extends {@link CommentsHelper} to rewrite Java comments. */
 public final class JavaCommentsHelper implements CommentsHelper {

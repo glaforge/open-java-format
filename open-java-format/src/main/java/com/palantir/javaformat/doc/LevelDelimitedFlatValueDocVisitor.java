@@ -53,7 +53,6 @@ public final class LevelDelimitedFlatValueDocVisitor implements DocVisitor<Strin
         return sb.toString();
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public String visitLevel(Level level) {
         if (level.getFlat().isEmpty()) {

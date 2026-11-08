@@ -47,20 +47,31 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import javax.lang.model.element.Name;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Extends {@link JavaInputAstVisitor} with support for AST nodes that were added or modified for Java 14.
  */
-@SuppressWarnings("Since15")
 public class Java14InputAstVisitor extends JavaInputAstVisitor {
+    @Nullable
     private static final Method COMPILATION_UNIT_TREE_GET_MODULE =
             maybeGetMethod(CompilationUnitTree.class, "getModule");
+
+    @Nullable
     private static final Method CLASS_TREE_GET_PERMITS_CLAUSE = maybeGetMethod(ClassTree.class, "getPermitsClause");
+
+    @Nullable
     private static final Method BINDING_PATTERN_TREE_GET_VARIABLE =
             maybeGetMethod(BindingPatternTree.class, "getVariable");
+
+    @Nullable
     private static final Method BINDING_PATTERN_TREE_GET_TYPE = maybeGetMethod(BindingPatternTree.class, "getType");
+
+    @Nullable
     private static final Method BINDING_PATTERN_TREE_GET_BINDING =
             maybeGetMethod(BindingPatternTree.class, "getBinding");
+
+    @Nullable
     private static final Method CASE_TREE_GET_LABELS = maybeGetMethod(CaseTree.class, "getLabels");
 
     public Java14InputAstVisitor(OpsBuilder builder, int indentMultiplier) {
@@ -94,7 +105,6 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         }
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Void visitBindingPattern(BindingPatternTree node, Void unused) {
         sync(node);
@@ -121,7 +131,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         return type.getKind().name().equals("VAR_TYPE");
     }
 
-    private void visitBindingPattern(ModifiersTree modifiers, Tree type, Name name) {
+    private void visitBindingPattern(@Nullable ModifiersTree modifiers, @Nullable Tree type, Name name) {
         builder.open(plusFour);
         if (modifiers != null) {
             builder.addAll(visitModifiers(modifiers, Direction.HORIZONTAL, Optional.empty()));
@@ -252,7 +262,6 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         return null;
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     @Override
     public Void visitCase(CaseTree node, Void unused) {
         sync(node);
@@ -347,7 +356,7 @@ public class Java14InputAstVisitor extends JavaInputAstVisitor {
         return null;
     }
 
-    @SuppressWarnings({"NullableProblems", "for-rollout:NullAway"})
+    @Nullable
     protected ExpressionTree getGuard(final CaseTree node) {
         return null;
     }

@@ -69,7 +69,6 @@ public final class FormatterServiceLoader {
         return LOADED.computeIfAbsent(key, _key -> loadUncached(jars));
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static FormatterService loadUncached(Collection<File> jars) {
         URL[] jarUris = jars.stream()
                 .map(file -> {

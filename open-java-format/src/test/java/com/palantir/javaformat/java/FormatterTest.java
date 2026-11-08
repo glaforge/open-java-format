@@ -17,11 +17,11 @@ package com.palantir.javaformat.java;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.palantir.javaformat.java.JavaFormatterOptions.Style;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Range;
 import com.google.common.io.CharStreams;
 import java.io.ByteArrayInputStream;
@@ -30,13 +30,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import javax.lang.model.element.Modifier;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -69,12 +69,20 @@ final class FormatterTest {
 
     @Test
     void formatStdinStdoutWithDashFlag() throws Exception {
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n";
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String expectedOutput = "class Foo {\n" + "    void f() {}\n" + "}\n";
+        String input = """
+            class Foo{
+            void f
+            () {
+            }
+            }
+            """;
+        String expectedOutput = """
+            class Foo {
+                void f() {}
+            }
+            """;
 
-        InputStream in = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+        InputStream in = new ByteArrayInputStream(input.getBytes(UTF_8));
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
 
@@ -90,13 +98,26 @@ final class FormatterTest {
 
     @Test
     void formatLengthUpToEOF() throws Exception {
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String input = "class Foo{\n" + "void f\n" + "() {\n" + "}\n" + "}\n\n\n\n\n\n";
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String expectedOutput = "class Foo {\n" + "    void f() {}\n" + "}\n";
+        String input = """
+            class Foo{
+            void f
+            () {
+            }
+            }
+
+
+
+
+
+            """;
+        String expectedOutput = """
+            class Foo {
+                void f() {}
+            }
+            """;
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -112,7 +133,7 @@ final class FormatterTest {
         String input = "class Foo{}\n";
 
         Path path = testFolder.resolve("Foo.java");
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -131,20 +152,19 @@ final class FormatterTest {
         assertThat(output).isEqualTo(expect);
     }
 
-    @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-    private static final String UNORDERED_IMPORTS = Joiner.on('\n')
-            .join(
-                    "import com.google.common.base.Preconditions;",
-                    "",
-                    "import static org.junit.Assert.fail;",
-                    "import static com.google.truth.Truth.assertThat;",
-                    "",
-                    "import org.junit.runners.JUnit4;",
-                    "import org.junit.runner.RunWith;",
-                    "",
-                    "import java.util.List;",
-                    "",
-                    "import javax.annotations.Nullable;");
+    private static final String UNORDERED_IMPORTS = """
+        import com.google.common.base.Preconditions;
+
+        import static org.junit.Assert.fail;
+        import static com.google.truth.Truth.assertThat;
+
+        import org.junit.runners.JUnit4;
+        import org.junit.runner.RunWith;
+
+        import java.util.List;
+
+        import javax.annotations.Nullable;\
+        """;
 
     @Test
     void importsNotReorderedByDefault() throws FormatterException {
@@ -178,13 +198,14 @@ final class FormatterTest {
                 "com/palantir/javaformat/java/testimports/A.formatting-and-import-sorting");
     }
 
-    private void importOrdering(String sortArg, String outputResourceName) throws IOException, UsageException {
+    private void importOrdering(@Nullable String sortArg, String outputResourceName)
+            throws IOException, UsageException {
         Path path = testFolder.resolve("Foo.java");
 
         String inputResourceName = "com/palantir/javaformat/java/testimports/A.input";
         String input = getResource(inputResourceName);
         String expectedOutput = getResource(outputResourceName);
-        Files.write(path, input.getBytes(StandardCharsets.UTF_8));
+        Files.write(path, input.getBytes(UTF_8));
 
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
@@ -195,14 +216,14 @@ final class FormatterTest {
 
         assertThat(err.toString()).isEmpty();
         assertThat(out.toString()).isEmpty();
-        String output = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+        String output = new String(Files.readAllBytes(path), UTF_8);
         assertThat(output).isEqualTo(expectedOutput);
     }
 
     private String getResource(String resourceName) throws IOException {
         try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourceName)) {
             assertWithMessage("Missing resource: " + resourceName).that(stream).isNotNull();
-            return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            return CharStreams.toString(new InputStreamReader(stream, UTF_8));
         }
     }
 
@@ -220,19 +241,27 @@ final class FormatterTest {
 
     @Test
     void blankLinesImportComment() throws FormatterException {
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String withBlank = "package p;\n"
-                + "\n"
-                + "/** test */\n"
-                + "\n"
-                + "import a.A;\n"
-                + "\n"
-                + "class T {\n"
-                + "    A a;\n"
-                + "}\n";
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String withoutBlank =
-                "package p;\n" + "\n" + "/** test */\n" + "import a.A;\n" + "\n" + "class T {\n" + "    A a;\n" + "}\n";
+        String withBlank = """
+            package p;
+
+            /** test */
+
+            import a.A;
+
+            class T {
+                A a;
+            }
+            """;
+        String withoutBlank = """
+            package p;
+
+            /** test */
+            import a.A;
+
+            class T {
+                A a;
+            }
+            """;
 
         // Formatting deletes the blank line between the "javadoc" and the first import.
         assertThat(FORMATTER.formatSource(withBlank)).isEqualTo(withoutBlank);
@@ -259,14 +288,15 @@ final class FormatterTest {
     @Test
     void producesFormattingChangesOnAlreadyFormattedFiles() throws FormatterException {
         Formatter formatter = FORMATTER;
-        @SuppressWarnings("for-rollout:StringConcatToTextBlock")
-        String simpleClass = "package com.palantir;\n"
-                + "\n"
-                + "public final class Formatted {\n"
-                + "  public static int count(int number) {\n"
-                + "    return number;\n"
-                + "  }\n"
-                + "}";
+        String simpleClass = """
+            package com.palantir;
+
+            public final class Formatted {
+              public static int count(int number) {
+                return number;
+              }
+            }\
+            """;
         // This is kinda overkill but the point of the test is to show that it
         // is for sure formatted and still producing a replacement.
         String formattedClass = formatter.formatSourceAndFixImports(simpleClass);

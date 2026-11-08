@@ -45,8 +45,10 @@ final class NativeImageAtomicCopyTest {
 
         var copy = NativeImageAtomicCopy.copyToCache(image, gradleUserHome.toFile());
 
-        assertThat(copy.getParent().getParent()).isEqualTo(gradleUserHome.resolve("open-java-format-caches"));
-        assertThat(copy.getParent().getFileName().toString()).matches("[0-9a-f]{16}");
+        var cacheDir = copy.getParent();
+        assertThat(cacheDir).isNotNull();
+        assertThat(cacheDir.getParent()).isEqualTo(gradleUserHome.resolve("open-java-format-caches"));
+        assertThat(cacheDir.getFileName().toString()).matches("[0-9a-f]{16}");
         assertThat(copy.getFileName()).isEqualTo(image.getFileName());
         assertThat(copy).hasContent("an image");
         assertThat(Files.isExecutable(copy)).isTrue();

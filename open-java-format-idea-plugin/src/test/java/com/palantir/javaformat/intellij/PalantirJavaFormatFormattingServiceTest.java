@@ -35,8 +35,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.JavaCodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.JavaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
-import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.State;
-import org.jetbrains.annotations.NotNull;
+import com.palantir.javaformat.intellij.PalantirJavaFormatSettings.StoredSettings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +48,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class PalantirJavaFormatFormattingServiceTest {
@@ -70,7 +70,7 @@ final class PalantirJavaFormatFormattingServiceTest {
 
         settings = PalantirJavaFormatSettings.getInstance(fixture.getProject());
 
-        State resetState = new State();
+        var resetState = new StoredSettings();
         resetState.setEnabled("true");
         settings.loadState(resetState);
     }
@@ -102,7 +102,6 @@ final class PalantirJavaFormatFormattingServiceTest {
         return fixture.getProject();
     }
 
-    @NotNull
     protected LightProjectDescriptor getProjectDescriptor() {
         return new DefaultLightProjectDescriptor() {
             @Override
@@ -127,12 +126,11 @@ final class PalantirJavaFormatFormattingServiceTest {
     }
 
     private static final class DelegatingFormatter extends PalantirJavaFormatFormattingService {
-        @SuppressWarnings("DataFlowIssue")
-        public DelegatingFormatter() {
-            this.setPluginDescriptor(FormattingService.EP_NAME
-                    .findExtension(PalantirJavaFormatFormattingService.class)
-                    .getPluginDescriptor()
-                    .orElseThrow());
+        DelegatingFormatter() {
+            this.setPluginDescriptor(
+                    requireNonNull(FormattingService.EP_NAME.findExtension(PalantirJavaFormatFormattingService.class))
+                            .getPluginDescriptor()
+                            .orElseThrow());
         }
 
         private boolean invoked = false;
@@ -143,7 +141,7 @@ final class PalantirJavaFormatFormattingServiceTest {
 
         @Override
         protected FormattingTask createFormattingTask(AsyncFormattingRequest request) {
-            FormattingTask delegateTask = super.createFormattingTask(request);
+            FormattingTask delegateTask = requireNonNull(super.createFormattingTask(request));
             return new FormattingTask() {
                 @Override
                 public boolean cancel() {

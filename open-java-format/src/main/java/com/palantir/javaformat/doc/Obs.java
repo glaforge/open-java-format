@@ -16,10 +16,11 @@
 
 package com.palantir.javaformat.doc;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
-import javax.annotation.CheckReturnValue;
+import org.jspecify.annotations.Nullable;
 
 /**
  * These classes exist purely for observing the operation of {@link Doc#computeBreaks}, including all the alternative
@@ -64,7 +65,6 @@ public final class Obs {
         String getOutput();
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     public static ExplorationNode createRoot(Sink sink) {
         return new ExplorationNodeImpl(null, "(initial node)", sink, 0, Optional.empty());
     }
@@ -95,7 +95,7 @@ public final class Obs {
         private final FinishLevelNode finisher;
         private final int startColumn;
 
-        public LevelNodeImpl(Level level, State incomingState, int parentExplorationId, Sink sink) {
+        LevelNodeImpl(Level level, State incomingState, int parentExplorationId, Sink sink) {
             this.level = level;
             this.sink = sink;
             this.finisher = sink.writeLevelNode(id(), parentExplorationId, incomingState, level);
@@ -170,8 +170,8 @@ public final class Obs {
         private final FinishExplorationNode finishExplorationNode;
         private final Optional<Level> parentLevel;
 
-        public ExplorationNodeImpl(
-                LevelNodeImpl parent,
+        ExplorationNodeImpl(
+                @Nullable LevelNodeImpl parent,
                 String humanDescription,
                 Sink sink,
                 int startColumn,

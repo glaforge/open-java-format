@@ -81,7 +81,7 @@ dependencies {
     testImplementation libs.assertj
     testImplementation libs.junit.jupiter
     testImplementation libs.junit.platform.launcher
-    implementation libs.jsr305
+    implementation libs.jspecify
 }
 
 intellijPlatform {

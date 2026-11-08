@@ -16,10 +16,11 @@
 
 package com.palantir.javaformat.bootstrap;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,7 @@ final class FormatterCommandRunner {
                 .start();
 
         try (OutputStream outputStream = process.getOutputStream()) {
-            outputStream.write(input.getBytes(StandardCharsets.UTF_8));
+            outputStream.write(input.getBytes(UTF_8));
         }
 
         // Make sure to drain stdout before waiting for the process to exit as this can result in a deadlock otherwise.
@@ -72,7 +73,7 @@ final class FormatterCommandRunner {
 
     private static String readToString(InputStream input) throws IOException {
         try (input) {
-            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            return new String(input.readAllBytes(), UTF_8);
         }
     }
 

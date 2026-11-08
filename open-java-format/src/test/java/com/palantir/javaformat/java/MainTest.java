@@ -439,10 +439,7 @@ final class MainTest {
         assertThat(exitCode).isEqualTo(0);
 
         assertThat(out.toString())
-                .isEqualTo(b.toAbsolutePath().toString()
-                        + System.lineSeparator()
-                        + c.toAbsolutePath().toString()
-                        + System.lineSeparator());
+                .isEqualTo(b.toAbsolutePath() + System.lineSeparator() + c.toAbsolutePath() + System.lineSeparator());
         assertThat(err.toString()).isEmpty();
     }
 
@@ -483,7 +480,6 @@ final class MainTest {
         Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
         Process process = formatterMain("-").redirectInput(path.toFile()).start();
         process.waitFor();
-        String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
         String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
         assertThat(out).isEqualTo("<stdin>" + System.lineSeparator());
         assertThat(process.exitValue()).isEqualTo(1);
@@ -495,9 +491,8 @@ final class MainTest {
         Files.write(path, "class Test {\n}\n".getBytes(UTF_8));
         Process process = formatterMain(path.toAbsolutePath().toString()).start();
         process.waitFor();
-        String err = new String(ByteStreams.toByteArray(process.getErrorStream()), UTF_8);
         String out = new String(ByteStreams.toByteArray(process.getInputStream()), UTF_8);
-        assertThat(out).isEqualTo(path.toAbsolutePath().toString() + System.lineSeparator());
+        assertThat(out).isEqualTo(path.toAbsolutePath() + System.lineSeparator());
         assertThat(process.exitValue()).isEqualTo(1);
     }
 

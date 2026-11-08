@@ -24,7 +24,7 @@ import com.palantir.javaformat.Input;
 import com.palantir.javaformat.OpsBuilder.BlankLineWanted;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public final class InputMetadataBuilder {
     private final Map<Integer, BlankLineWanted> blankLines = new HashMap<>(); // Info on blank lines.

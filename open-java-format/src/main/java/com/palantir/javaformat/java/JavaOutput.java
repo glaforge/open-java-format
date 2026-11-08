@@ -14,6 +14,8 @@
 
 package com.palantir.javaformat.java;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.DiscreteDomain;
@@ -242,7 +244,6 @@ public final class JavaOutput extends Output {
      *
      * @return a list of {@link Replacement}s, sorted by start index, without overlaps
      */
-    @SuppressWarnings("for-rollout:NullAway")
     public ImmutableList<Replacement> getFormatReplacements(RangeSet<Integer> iRangeSet0) {
         ImmutableList.Builder<Replacement> result = ImmutableList.builder();
         Map<Integer, Range<Integer>> kToJ = JavaOutput.makeKToIJ(this);
@@ -278,15 +279,14 @@ public final class JavaOutput extends Output {
                 replaceFrom--;
             }
 
-            @SuppressWarnings("for-rollout:NullAway")
-            int i = kToJ.get(startTok.getIndex()).lowerEndpoint();
+            int i = checkNotNull(kToJ.get(startTok.getIndex())).lowerEndpoint();
             // Include leading blank lines from the formatted output, unless the formatted range
             // starts at the beginning of the file.
             while (i > 0 && getLine(i - 1).isEmpty()) {
                 i--;
             }
             // Write out the formatted range.
-            for (; i < kToJ.get(endTok.getIndex()).upperEndpoint(); i++) {
+            for (; i < checkNotNull(kToJ.get(endTok.getIndex())).upperEndpoint(); i++) {
                 // It's possible to run out of output lines (e.g. if the input ended with
                 // multiple trailing newlines).
                 if (i < getLineCount()) {
@@ -357,7 +357,6 @@ public final class JavaOutput extends Output {
      * @param iRange the {@link Range} of tokens
      * @return the expanded token range
      */
-    @SuppressWarnings("for-rollout:NullAway")
     private Range<Integer> expandToBreakableRegions(Range<Integer> iRange) {
         // The original line range.
         int loTok = iRange.lowerEndpoint();
@@ -367,8 +366,8 @@ public final class JavaOutput extends Output {
         if (!partialFormatRanges().contains(loTok) || !partialFormatRanges().contains(hiTok)) {
             return EMPTY_RANGE;
         }
-        loTok = partialFormatRanges().rangeContaining(loTok).lowerEndpoint();
-        hiTok = partialFormatRanges().rangeContaining(hiTok).upperEndpoint();
+        loTok = checkNotNull(partialFormatRanges().rangeContaining(loTok)).lowerEndpoint();
+        hiTok = checkNotNull(partialFormatRanges().rangeContaining(hiTok)).upperEndpoint();
         return Range.closedOpen(loTok, hiTok + 1);
     }
 

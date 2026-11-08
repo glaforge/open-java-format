@@ -32,7 +32,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -102,8 +101,7 @@ final class FormatterServicesTest {
         return Stream.of(
                 new BootstrappingFormatterService(
                         javaBinPath(), Runtime.version().feature(), getClasspath()),
-                new NativeImageFormatterService(
-                        Path.of(System.getenv("NATIVE_IMAGE_CLASSPATH").toString())));
+                new NativeImageFormatterService(Path.of(System.getenv("NATIVE_IMAGE_CLASSPATH"))));
     }
 
     private String getTestResourceContent(String resourceName) {
@@ -122,7 +120,7 @@ final class FormatterServicesTest {
                 .omitEmptyStrings()
                 .splitToStream(classpath)
                 .map(Path::of)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Path javaBinPath() {

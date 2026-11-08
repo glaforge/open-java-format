@@ -16,6 +16,7 @@
 
 package com.palantir.javaformat.java;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getLast;
 
@@ -33,8 +34,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import javax.lang.model.element.Modifier;
+import org.jspecify.annotations.Nullable;
 
 /** Fixes sequences of modifiers to be in JLS order. */
 final class ModifierOrderer {
@@ -71,7 +72,7 @@ final class ModifierOrderer {
             return tokens.isEmpty() || modifier == null;
         }
 
-        @SuppressWarnings("for-rollout:NullAway")
+        @Nullable
         Modifier modifier() {
             return modifier;
         }
@@ -105,10 +106,9 @@ final class ModifierOrderer {
         }
 
         @Override
-        @SuppressWarnings("for-rollout:NullAway")
         public int compareTo(ModifierTokens o) {
             checkState(!isEmpty()); // empty ModifierTokens are filtered out prior to sorting
-            return modifier.compareTo(o.modifier);
+            return checkNotNull(modifier).compareTo(checkNotNull(o.modifier));
         }
     }
 
@@ -209,7 +209,6 @@ final class ModifierOrderer {
      * Returns the given token as a {@link javax.lang.model.element.Modifier}, or {@code null} if it is not a modifier.
      */
     @Nullable
-    @SuppressWarnings("for-rollout:NullAway")
     private static Modifier asModifier(Token token) {
         TokenKind kind = ((JavaInput.Tok) token.getTok()).kind();
         if (kind != null) {

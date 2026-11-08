@@ -84,8 +84,7 @@ public final class PalantirJavaFormatStep {
     static final class Signature implements Serializable {
         private static final long serialVersionUID = 1L;
 
-        // Spotless compares the signature in its serialized form, and reads nothing out of it.
-        @SuppressWarnings("UnusedVariable")
+        /** The hash of the plugin's own jars, or empty when the build declared its own. */
         private final String bundled;
 
         private final FileSignature override;
@@ -100,7 +99,7 @@ public final class PalantirJavaFormatStep {
         }
 
         List<File> jars() {
-            return BundledFormatter.jarsUnlessOverridden(override.files(), gradleUserHome);
+            return bundled.isEmpty() ? List.copyOf(override.files()) : BundledFormatter.jars(gradleUserHome);
         }
     }
 

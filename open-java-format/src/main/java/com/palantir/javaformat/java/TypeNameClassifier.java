@@ -29,7 +29,7 @@ public final class TypeNameClassifier {
         /** The start state. */
         START(false) {
             @Override
-            public TyParseState next(JavaCaseFormat n) {
+            TyParseState next(JavaCaseFormat n) {
                 return switch (n) {
                     case UPPERCASE ->
                         // if we see an UpperCamel later, assume this was a class
@@ -47,7 +47,7 @@ public final class TypeNameClassifier {
         /** The current prefix is a type. */
         TYPE(true) {
             @Override
-            public TyParseState next(JavaCaseFormat n) {
+            TyParseState next(JavaCaseFormat n) {
                 return switch (n) {
                     case UPPERCASE, LOWER_CAMEL, LOWERCASE -> TyParseState.FIRST_STATIC_MEMBER;
                     case UPPER_CAMEL -> TyParseState.TYPE;
@@ -58,7 +58,7 @@ public final class TypeNameClassifier {
         /** The current prefix is a type, followed by a single static member access. */
         FIRST_STATIC_MEMBER(true) {
             @Override
-            public TyParseState next(JavaCaseFormat n) {
+            TyParseState next(JavaCaseFormat n) {
                 return TyParseState.REJECT;
             }
         },
@@ -66,7 +66,7 @@ public final class TypeNameClassifier {
         /** Anything not represented by one of the other states. */
         REJECT(false) {
             @Override
-            public TyParseState next(JavaCaseFormat n) {
+            TyParseState next(JavaCaseFormat n) {
                 return TyParseState.REJECT;
             }
         },
@@ -74,7 +74,7 @@ public final class TypeNameClassifier {
         /** An ambiguous type prefix. */
         AMBIGUOUS(false) {
             @Override
-            public TyParseState next(JavaCaseFormat n) {
+            TyParseState next(JavaCaseFormat n) {
                 return switch (n) {
                     case UPPERCASE -> AMBIGUOUS;
                     case LOWER_CAMEL, LOWERCASE -> TyParseState.REJECT;
@@ -89,12 +89,12 @@ public final class TypeNameClassifier {
             this.isSingleUnit = isSingleUnit;
         }
 
-        public boolean isSingleUnit() {
+        boolean isSingleUnit() {
             return isSingleUnit;
         }
 
         /** Transition function. */
-        public abstract TyParseState next(JavaCaseFormat n);
+        abstract TyParseState next(JavaCaseFormat n);
     }
 
     /**

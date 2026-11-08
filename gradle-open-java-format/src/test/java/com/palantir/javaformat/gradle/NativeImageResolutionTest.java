@@ -14,6 +14,7 @@
 
 package com.palantir.javaformat.gradle;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -22,7 +23,6 @@ import com.palantir.javaformat.gradle.testing.GradleTestProject;
 import com.palantir.javaformat.java.Replacement;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -154,7 +154,7 @@ final class NativeImageResolutionTest {
             var process = new ProcessBuilder("ldd", "--version")
                     .redirectErrorStream(true)
                     .start();
-            var output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            var output = new String(process.getInputStream().readAllBytes(), UTF_8);
             process.waitFor();
             return output.lines().findFirst().orElse("");
         } catch (IOException e) {

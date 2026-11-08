@@ -1147,7 +1147,6 @@ final class JavadocFormattingTest {
     }
 
     @Test
-    @SuppressWarnings("UnicodeEscape")
     void unicodeEscapesNotInterpretedBug() {
         /*
          * In theory, "\u003C" should be treated exactly like <, and so too should the escaped versions of

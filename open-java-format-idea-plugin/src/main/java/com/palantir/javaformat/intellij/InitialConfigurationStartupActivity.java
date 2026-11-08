@@ -18,11 +18,10 @@ package com.palantir.javaformat.intellij;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import org.jetbrains.annotations.NotNull;
 
 public final class InitialConfigurationStartupActivity implements StartupActivity.DumbAware {
     @Override
-    public void runActivity(@NotNull Project project) {
+    public void runActivity(Project project) {
         PalantirJavaFormatSettings settings = PalantirJavaFormatSettings.getInstance(project);
         if (settings.isUninitialized()) {
             settings.setEnabled(false);

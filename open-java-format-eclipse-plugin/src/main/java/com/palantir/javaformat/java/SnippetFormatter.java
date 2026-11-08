@@ -42,18 +42,18 @@ public class SnippetFormatter {
         int offset;
         final StringBuilder contents = new StringBuilder();
 
-        public SnippetWrapper append(String str) {
+        SnippetWrapper append(String str) {
             contents.append(str);
             return this;
         }
 
-        public SnippetWrapper appendSource(String source) {
+        SnippetWrapper appendSource(String source) {
             this.offset = contents.length();
             contents.append(source);
             return this;
         }
 
-        public void closeBraces(int initialIndent) {
+        void closeBraces(int initialIndent) {
             for (int i = initialIndent; --i >= 0; ) {
                 contents.append("\n").append(createIndentationString(i)).append("}");
             }
@@ -159,7 +159,7 @@ public class SnippetFormatter {
          * dummy class is correctly formatted -- the blocks use correct indentation,
          * etc.
          */
-        switch (kind) {
+        return switch (kind) {
             case COMPILATION_UNIT -> {
                 SnippetWrapper wrapper = new SnippetWrapper();
                 for (int i = 1; i <= initialIndent; i++) {
@@ -167,7 +167,7 @@ public class SnippetFormatter {
                 }
                 wrapper.appendSource(source);
                 wrapper.closeBraces(initialIndent);
-                return wrapper;
+                yield wrapper;
             }
             case CLASS_BODY_DECLARATIONS -> {
                 SnippetWrapper wrapper = new SnippetWrapper();
@@ -176,7 +176,7 @@ public class SnippetFormatter {
                 }
                 wrapper.appendSource(source);
                 wrapper.closeBraces(initialIndent);
-                return wrapper;
+                yield wrapper;
             }
             case STATEMENTS -> {
                 SnippetWrapper wrapper = new SnippetWrapper();
@@ -186,7 +186,7 @@ public class SnippetFormatter {
                 }
                 wrapper.appendSource(source);
                 wrapper.closeBraces(initialIndent);
-                return wrapper;
+                yield wrapper;
             }
             case EXPRESSION -> {
                 SnippetWrapper wrapper = new SnippetWrapper();
@@ -198,9 +198,9 @@ public class SnippetFormatter {
                 wrapper.appendSource(source);
                 wrapper.append(";");
                 wrapper.closeBraces(initialIndent);
-                return wrapper;
+                yield wrapper;
             }
             default -> throw new IllegalArgumentException("Unknown snippet kind: " + kind);
-        }
+        };
     }
 }

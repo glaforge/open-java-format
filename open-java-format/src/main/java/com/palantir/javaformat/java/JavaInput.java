@@ -57,9 +57,9 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
+import org.jspecify.annotations.Nullable;
 
 /** {@code JavaInput} extends {@link Input} to represent a Java input document. */
-@SuppressWarnings("for-rollout:ThrowError")
 public final class JavaInput extends Input {
     /**
      * A {@code JavaInput} is a sequence of {@link Tok}s that cover the Java input. A {@link Tok} is either a token (if
@@ -80,6 +80,8 @@ public final class JavaInput extends Input {
         private final int position;
         private final int columnI;
         private final boolean isToken;
+
+        @Nullable
         private final TokenKind kind;
 
         /**
@@ -93,7 +95,14 @@ public final class JavaInput extends Input {
          * @param isToken whether the {@code Tok} is a token
          * @param kind the token kind
          */
-        Tok(int index, String originalText, String text, int position, int columnI, boolean isToken, TokenKind kind) {
+        Tok(
+                int index,
+                String originalText,
+                String text,
+                int position,
+                int columnI,
+                boolean isToken,
+                @Nullable TokenKind kind) {
             this.index = index;
             this.originalText = originalText;
             this.text = text;
@@ -175,6 +184,7 @@ public final class JavaInput extends Input {
                     .toString();
         }
 
+        @Nullable
         public TokenKind kind() {
             return kind;
         }
@@ -258,7 +268,6 @@ public final class JavaInput extends Input {
      * output.
      */
 
-    @SuppressWarnings("for-rollout:AlmostJavadoc")
     private final ImmutableMap<Integer, Integer> positionToColumnMap; // Map Tok position to column.
 
     private final ImmutableList<Token> tokens; // The Tokens for this input.
@@ -273,7 +282,6 @@ public final class JavaInput extends Input {
      * @param text the input text
      * @throws FormatterException if the input cannot be parsed
      */
-    @SuppressWarnings("for-rollout:NullAway")
     public JavaInput(String text) throws FormatterException {
         this.text = checkNotNull(text);
         setLines(ImmutableList.copyOf(Newlines.lineIterator(text)));
@@ -338,7 +346,6 @@ public final class JavaInput extends Input {
     }
 
     /** Lex the input and build the list of toks. */
-    @SuppressWarnings("for-rollout:NullAway")
     private ImmutableList<Tok> buildToks(String text) throws FormatterException {
         ImmutableList<Tok> toks = buildToks(text, ImmutableSet.of());
         kN = getLast(toks).getIndex();
@@ -353,7 +360,6 @@ public final class JavaInput extends Input {
      * @param stopTokens a set of tokens which should cause lexing to stop. If one of these is found, the returned list
      *     will include tokens up to but not including that token.
      */
-    @SuppressWarnings("for-rollout:NullAway")
     static ImmutableList<Tok> buildToks(String text, ImmutableSet<TokenKind> stopTokens) throws FormatterException {
         stopTokens = ImmutableSet.<TokenKind>builder()
                 .addAll(stopTokens)
@@ -388,7 +394,7 @@ public final class JavaInput extends Input {
             // Get string, possibly with Unicode escapes.
             String originalTokText = text.substring(charI0, t.endPos());
             String tokText = t.kind() == TokenKind.STRINGLITERAL
-                    ? t.stringVal() // Unicode escapes removed.
+                    ? checkNotNull(t.stringVal()) // Unicode escapes removed.
                     : originalTokText;
             char tokText0 = tokText.charAt(0); // The token's first character.
             final boolean isToken; // Is this tok a token?
@@ -419,7 +425,7 @@ public final class JavaInput extends Input {
             } else if (tokText.startsWith("//") || tokText.startsWith("/*")) {
                 // For compatibility with an earlier lexer, the newline after a // comment is its own tok.
                 if (tokText.startsWith("//") && (originalTokText.endsWith("\n") || originalTokText.endsWith("\r"))) {
-                    extraNewline = Newlines.getLineEnding(originalTokText);
+                    extraNewline = checkNotNull(Newlines.getLineEnding(originalTokText));
                     tokText = tokText.substring(0, tokText.length() - extraNewline.length());
                     originalTokText = originalTokText.substring(0, originalTokText.length() - extraNewline.length());
                 }
@@ -481,7 +487,6 @@ public final class JavaInput extends Input {
      * @param handler the diagnostic handler
      * @return a collection of diagnostics
      */
-    @SuppressWarnings({"unchecked", "for-rollout:ThrowError"})
     private static Collection<JCDiagnostic> getDiagnostics(DeferredDiagnosticHandler handler) {
         try {
             return (Collection<JCDiagnostic>) GET_DIAGNOSTICS.invoke(handler);
@@ -549,7 +554,6 @@ public final class JavaInput extends Input {
         return !tok.isToken() && !tok.isNewline() && !tok.isComment();
     }
 
-    @SuppressWarnings("for-rollout:NullAway")
     private static int updateColumn(int columnI, String originalTokText) {
         Integer last = Iterators.getLast(Newlines.lineOffsetIterator(originalTokText));
         if (last > 0) {
@@ -642,7 +646,6 @@ public final class JavaInput extends Input {
      * @return the {@code 0}-based {@link Range} of tokens
      * @throws FormatterException on formatting errors
      */
-    @SuppressWarnings("for-rollout:NullAway")
     Range<Integer> characterRangeToTokenRange(int offset, int length) throws FormatterException {
         int requiredLength = offset + length;
         if (requiredLength > text.length()) {
@@ -715,6 +718,7 @@ public final class JavaInput extends Input {
                 .toString();
     }
 
+    @Nullable
     private JCCompilationUnit unit;
 
     @Override

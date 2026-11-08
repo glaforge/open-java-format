@@ -25,7 +25,6 @@ public final class PalantirJavaFormatProviderPlugin implements Plugin<Project> {
 
     static final String CONFIGURATION_NAME = "palantirJavaFormat";
 
-    @SuppressWarnings({"for-rollout:GradleTypesAsFields", "for-rollout:NonAbstractGradleType"})
     @Override
     public void apply(Project rootProject) {
         Preconditions.checkState(
@@ -34,7 +33,6 @@ public final class PalantirJavaFormatProviderPlugin implements Plugin<Project> {
 
         rootProject.getPluginManager().apply(NativeImageFormatProviderPlugin.class);
 
-        @SuppressWarnings("for-rollout:ConfigurationAvoidanceRegistration")
         Configuration configuration = rootProject.getConfigurations().create(CONFIGURATION_NAME, conf -> {
             // Empty unless the build declares a formatter: the plugin carries its own, and needs no repository.
             conf.setDescription("Overrides the open-java-format implementation that comes inside the plugin");

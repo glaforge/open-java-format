@@ -31,7 +31,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class NativeImageFormatterService implements FormatterService {
     private static final ObjectMapper MAPPER =
@@ -49,7 +48,7 @@ public class NativeImageFormatterService implements FormatterService {
             FormatterNativeImageArgs command = new FormatterNativeImageArgs(
                     nativeImagePath,
                     /* outputReplacements= */ true,
-                    ranges.stream().map(RangeUtils::toStringRange).collect(Collectors.toList()));
+                    ranges.stream().map(RangeUtils::toStringRange).toList());
 
             output = FormatterCommandRunner.runWithStdin(
                     command.toArgs(), input, Optional.ofNullable(nativeImagePath.getParent()));

@@ -17,7 +17,7 @@ package com.palantir.javaformat.java;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Joiner;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Checked exception class for formatter command-line usage errors. */
 final class UsageException extends Exception {

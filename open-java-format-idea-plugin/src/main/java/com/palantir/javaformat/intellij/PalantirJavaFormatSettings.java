@@ -23,8 +23,8 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.project.Project;
 import com.palantir.javaformat.java.FormatterService;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -32,33 +32,26 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
-@SuppressWarnings("for-rollout:SameNameButDifferent")
-@State(
-        name = "PalantirJavaFormatSettings",
-        storages = {@Storage("open-java-format.xml")})
-public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.State> {
+@State(name = "PalantirJavaFormatSettings", storages = @Storage("open-java-format.xml"))
+public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.StoredSettings> {
 
-    @SuppressWarnings("for-rollout:SameNameButDifferent")
-    private State state = new State();
+    private StoredSettings state = new StoredSettings();
 
     static PalantirJavaFormatSettings getInstance(Project project) {
         return project.getService(PalantirJavaFormatSettings.class);
     }
 
-    @SuppressWarnings("for-rollout:SameNameButDifferent")
-    @Nullable
     @Override
-    public State getState() {
+    public StoredSettings getState() {
         return state;
     }
 
     @Override
-    public void loadState(@SuppressWarnings("for-rollout:SameNameButDifferent") State state) {
+    public void loadState(StoredSettings state) {
         this.state = state;
     }
 
@@ -152,7 +145,7 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
         DISABLED
     }
 
-    static class State {
+    static class StoredSettings {
 
         private EnabledState enabled = EnabledState.UNKNOWN;
         private Optional<List<URI>> implementationClassPath = Optional.empty();
@@ -164,13 +157,13 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
 
         public void setImplementationClassPath(@Nullable List<String> value) {
             implementationClassPath = Optional.ofNullable(value)
-                    .map(strings -> strings.stream().map(URI::create).collect(Collectors.toList()));
+                    .map(strings -> strings.stream().map(URI::create).toList());
         }
 
-        @SuppressWarnings("for-rollout:NullAway")
+        @Nullable
         public List<String> getImplementationClassPath() {
             return implementationClassPath
-                    .map(paths -> paths.stream().map(URI::toString).collect(Collectors.toList()))
+                    .map(paths -> paths.stream().map(URI::toString).toList())
                     .orElse(null);
         }
 
@@ -185,7 +178,7 @@ public class PalantirJavaFormatSettings implements PersistentStateComponent<Pala
             }
         }
 
-        @SuppressWarnings("for-rollout:NullAway")
+        @Nullable
         public String getEnabled() {
             return switch (enabled) {
                 case ENABLED -> "true";
