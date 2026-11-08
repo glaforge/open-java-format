@@ -33,6 +33,11 @@
     <notificationGroup displayType="BALLOON" id="open-java-format parsing error"
                        isLogByDefault="false"/>
     <notificationGroup displayType="STICKY_BALLOON" id="open-java-format native binary"/>
+    <!-- Errors the IDE traces to this plugin go to the Exceptions tab of its JetBrains Marketplace page. A release
+         IDE does not show them, as it does not show its own: the submitter is an ITNReporter, whose errors and
+         Report button only EAP builds show. From a release IDE a report goes only when the user lets the IDE send
+         error reports automatically, which 2024.2 cannot do. -->
+    <errorHandler implementation="com.intellij.diagnostic.JetBrainsMarketplaceErrorReportSubmitter"/>
   </extensions>
 
 </idea-plugin>
