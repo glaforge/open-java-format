@@ -104,7 +104,7 @@ final class FormatDiffTest {
         process.getErrorStream().transferTo(baos);
         String stderr = baos.toString(UTF_8);
 
-        Preconditions.checkState(process.exitValue() == 0, "Expected return code of 0: " + stderr);
+        Preconditions.checkState(process.exitValue() == 0, "Expected return code of 0: %s", stderr);
     }
 
     private static Stream<FormatterService> getFormatters() throws IOException {

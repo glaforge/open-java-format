@@ -176,7 +176,7 @@ final class PalantirJavaFormatConfigurableTest {
 
             useNativeImage.setSelected(true);
             assertThat(activeFormatter().getText())
-                    .isEqualTo("Need to download version " + pluginVersion + " from Maven Central");
+                    .isEqualTo("Need to download version %s from Maven Central", pluginVersion);
 
             path.setText("/opt/open-java-format");
             assertThat(activeFormatter().getText()).isEqualTo("/opt/open-java-format");
@@ -268,7 +268,7 @@ final class PalantirJavaFormatConfigurableTest {
 
             assertThatThrownBy(configurable::apply)
                     .isInstanceOf(ConfigurationException.class)
-                    .hasMessage(missing + " is not an executable file");
+                    .hasMessage("%s is not an executable file", missing);
         });
     }
 

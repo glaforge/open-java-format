@@ -102,7 +102,7 @@ final class JavaCommentsHelperTest {
         // over as one tok (23 and later) or as one tok per line.
         String rewritten = rewrite("///Summary line.\n" + " ".repeat(COLUMN) + "///More text.", Style.OJF);
 
-        assertThat(rewritten).isEqualTo("/// Summary line.\n" + " ".repeat(COLUMN) + "/// More text.");
+        assertThat(rewritten).isEqualTo("/// Summary line.\n%s/// More text.", " ".repeat(COLUMN));
     }
 
     @Test

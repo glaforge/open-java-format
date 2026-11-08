@@ -79,7 +79,7 @@ public class FormatterIntegrationTest {
                 tests.writeFormatterOutput(name, output);
                 return;
             }
-            assertThat(output).describedAs("bad output for " + name).isEqualTo(expected);
+            assertThat(output).describedAs("bad output for %s", name).isEqualTo(expected);
         } catch (FormatterException e) {
             throw new RuntimeException(String.format("Formatter crashed on %s", name), e);
         }
@@ -100,7 +100,7 @@ public class FormatterIntegrationTest {
         try {
             String mangled = expected.replace(separator, "\n");
             String output = createFormatter().formatSource(mangled);
-            assertThat(output).describedAs("bad output for " + name).isEqualTo(mangled);
+            assertThat(output).describedAs("bad output for %s", name).isEqualTo(mangled);
         } catch (FormatterException e) {
             throw new RuntimeException(String.format("Formatter crashed on %s", name), e);
         }
@@ -113,7 +113,7 @@ public class FormatterIntegrationTest {
         try {
             String mangled = expected.replace(separator, "\r");
             String output = createFormatter().formatSource(mangled);
-            assertThat(output).describedAs("bad output for " + name).isEqualTo(mangled);
+            assertThat(output).describedAs("bad output for %s", name).isEqualTo(mangled);
         } catch (FormatterException e) {
             throw new RuntimeException(String.format("Formatter crashed on %s", name), e);
         }
@@ -126,7 +126,7 @@ public class FormatterIntegrationTest {
         try {
             String mangled = expected.replace(separator, "\r\n");
             String output = createFormatter().formatSource(mangled);
-            assertThat(output).describedAs("bad output for " + name).isEqualTo(mangled);
+            assertThat(output).describedAs("bad output for %s", name).isEqualTo(mangled);
         } catch (FormatterException e) {
             throw new RuntimeException(String.format("Formatter crashed on %s", name), e);
         }
