@@ -55,6 +55,7 @@ tasks.withType(JavaCompile).configureEach {
 // Checks whose findings have been fixed, build-breaking so that new ones are fixed too rather than read past.
 tasks.withType(JavaCompile).configureEach {
     options.errorprone {
+        error('SameNameButDifferent')
         error('UnusedVariable')
     }
 }

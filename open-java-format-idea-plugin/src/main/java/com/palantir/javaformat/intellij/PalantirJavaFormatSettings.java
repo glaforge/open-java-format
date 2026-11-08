@@ -18,7 +18,6 @@ package com.palantir.javaformat.intellij;
 
 import com.intellij.formatting.service.FormattingService;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.extensions.PluginDescriptor;
 import com.intellij.openapi.project.Project;
@@ -37,7 +36,7 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
-@State(
+@com.intellij.openapi.components.State(
         name = "PalantirJavaFormatSettings",
         storages = {@Storage("open-java-format.xml")})
 public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.State> {
