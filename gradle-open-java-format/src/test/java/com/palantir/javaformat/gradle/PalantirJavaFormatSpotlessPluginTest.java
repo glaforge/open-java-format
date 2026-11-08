@@ -51,11 +51,7 @@ final class PalantirJavaFormatSpotlessPluginTest {
     @TempDir
     private Path projectDir;
 
-    // There used to be a third case — native.formatter=true on Java 17, expecting the native-image
-    // formatter. SpotlessInterop only picks the native image when JavaVersion.current() < 21, and the
-    // generated build's daemon used to be forced onto 17 by palantir/gradle-jdks. Without that plugin
-    // TestKit runs the generated build on the same JVM as the test, so the case could only ever assert
-    // the Java-based path. Restoring it means pointing org.gradle.java.home at a JDK below 21.
+    // native.formatter=true too formats on the Gradle JVM: Spotless has no native step.
     @ParameterizedTest
     @CsvSource(
             delimiter = '|',

@@ -18,10 +18,8 @@ package com.palantir.javaformat.gradle.spotless;
 import com.diffplug.spotless.FileSignature;
 import com.diffplug.spotless.FormatterFunc;
 import com.diffplug.spotless.FormatterStep;
-import com.google.errorprone.annotations.InlineMe;
 import com.palantir.javaformat.gradle.FormatterServiceLoader;
 import com.palantir.javaformat.java.FormatterService;
-import java.util.function.Supplier;
 import org.gradle.api.artifacts.Configuration;
 
 public final class PalantirJavaFormatStep {
@@ -45,19 +43,6 @@ public final class PalantirJavaFormatStep {
                 () -> FileSignature.promise(palantirJavaFormat.getFiles()),
                 FileSignature.Promised::get,
                 PalantirJavaFormatStep::createFormat);
-    }
-
-    /**
-     * Creates the same step as {@link #create(Configuration)}.
-     *
-     * @deprecated the step loads the formatter from the configuration's jars, and ignores {@code memoizedService}.
-     */
-    @Deprecated
-    @InlineMe(
-            replacement = "PalantirJavaFormatStep.create(palantirJavaFormat)",
-            imports = "com.palantir.javaformat.gradle.spotless.PalantirJavaFormatStep")
-    public static FormatterStep create(Configuration palantirJavaFormat, Supplier<FormatterService> memoizedService) {
-        return create(palantirJavaFormat);
     }
 
     private static FormatterFunc createFormat(FileSignature jars) {
