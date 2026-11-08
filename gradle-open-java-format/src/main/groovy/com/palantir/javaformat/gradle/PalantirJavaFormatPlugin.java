@@ -22,7 +22,6 @@ import java.io.IOException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
@@ -53,6 +52,7 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
         project.getPlugins().apply(PalantirJavaFormatSpotlessPlugin.class);
 
         project.getPlugins().withId("java", p -> {
+            var formatterClasspath = FormatterClasspath.of(project);
 
             // TODO(dfox): in the future we may want to offer a simple 'format' task so people don't need to use
             // spotless to try out our formatter
@@ -61,14 +61,10 @@ public abstract class PalantirJavaFormatPlugin implements Plugin<Project> {
                 if (getNativeImageSupport().isNativeImageConfigured()) {
                     task.getNativeImage().fileProvider(getNativeImplConfiguration(project));
                 } else {
-                    task.getFormatterClasspath().from(getImplConfiguration(project));
+                    task.getFormatterClasspath().from(formatterClasspath);
                 }
             });
         });
-    }
-
-    private static Provider<Configuration> getImplConfiguration(Project project) {
-        return project.getRootProject().getConfigurations().named(PalantirJavaFormatProviderPlugin.CONFIGURATION_NAME);
     }
 
     private static Provider<File> getNativeImplConfiguration(Project project) {
